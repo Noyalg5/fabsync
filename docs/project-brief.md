@@ -47,18 +47,18 @@ source of project context is this file.
 | `src/fabsync/generate/` | Synthetic source extracts for the three systems |
 | `src/fabsync/ingest/` | Synthetic generator; per-system contracts (`corvus_mrp.py`, `finance.py`, `shop_floor.py`); raw, staging, core, profiling; `pipeline.py` orchestrates |
 | `src/fabsync/match/` | Matchers for materials, suppliers, jobs, works orders; `pipeline.py` orchestrates, `report.py` writes the quality report |
-| `src/fabsync/quality/` | Data quality rules and governance checks |
+| `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
 | `src/fabsync/reconcile/` | Golden records with source lineage |
 | `src/fabsync/kpi/` | Management KPIs |
 | `app/` | Streamlit demonstrator |
-| `config/` | `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
+| `config/` | `dq_rules.yaml` the data quality rules; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
-| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md` and `match-quality-report.md` |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md` and `dq-scorecard.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `run-all`, `app`, `pack`, `test`, `clean`.
 
 ## The three source systems
 
@@ -179,6 +179,26 @@ writes only its own tables, so it reruns without re-ingesting. Output:
 - **Works orders:** `core.works_order_xref`. Numbers Corvus does not hold get transposition
   candidates in the review queue.
 - **Combined review queue:** `core.v_match_review_queue`.
+
+## Data quality and governance
+
+`make quality` runs every rule in `config/dq_rules.yaml`. Rules are never hardcoded, and the engine
+refuses a rule file that breaks the schema.
+
+- **What a rule declares:** id, name, business description, dimension, severity, system of record,
+  owning role, the check as SQL or `module:function`, pass threshold, business consequence,
+  corrective action, and the seeded defects it covers.
+- **Check contract:** one row per record checked, with `record_key`, `passed`, `observed`, and
+  optionally `source_file` and `source_row`.
+- **Results:** `governance.dq_results` gains a row per rule per run and is never overwritten. The
+  trend is in `governance.v_dq_trend`, and `make ingest` carries this history across rebuilds.
+- **Scorecards:** `governance.v_dq_scorecard_by_owner`, `_by_system`, `_by_dimension`, and
+  `docs/dq-scorecard.md`.
+- **Exception queue:** `governance.v_dq_exception_queue` holds the latest run's failing records,
+  with severity, owner and corrective action.
+- **Headline index:** DQI = 100 × Σ(weight × min(1, pass rate / threshold)) / Σ weight. Severity
+  weights are critical 8, high 4, medium 2, low 1.
+- **Owning roles:** Purchasing Manager, Production Controller, Finance Manager, Quality Manager.
 
 ## Naming and style
 

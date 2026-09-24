@@ -1,0 +1,760 @@
+# FabSync data quality rules. All data these rules run against is synthetic.
+#
+# Rules live here, not in code. The engine (src/fabsync/quality) reads this file,
+# validates every rule, and runs each check against the warehouse.
+#
+# A check is either:
+#   sql:    a query returning one row per record checked, with columns
+#           record_key, passed (boolean), observed (text), and optionally
+#           source_file and source_row for tracing back to the file line
+#   python: "module:function", called as function(con, parameters) and
+#           returning a DataFrame with the same columns
+#
+# ${name} in SQL is replaced with the value from `parameters` below.
+# threshold is the minimum share of records that must pass (0 to 1).
+# covers_defects lists the seeded defects (data/raw/DEFECTS.md) a rule detects.
+
+parameters:
+  as_of_date: "2026-08-31"     # extract date of the synthetic snapshot; in production, today
+  receipt_grace_days: 5        # days after the promised date before a missing receipt counts
+  invoice_grace_days: 30       # days after receipt before a missing invoice counts
+  invoice_tolerance: 0.05      # invoice may exceed order value by this share
+  labour_rate: 38.0            # pounds per booked hour charged to jobs by finance
+  labour_tolerance: 0.05       # finance labour may differ from booked hours x rate by this share
+  stock_count_days: 90         # a stock line must be counted at least this often
+  works_order_close_days: 30   # days after planned finish before an open works order counts as overdue
+  ncr_close_days: 60           # an NCR should be closed within this many days
+  max_booking_hours: 16        # a single booking above this is not plausible
+
+severity_weights:              # used by the headline data quality index
+  critical: 8
+  high: 4
+  medium: 2
+  low: 1
+
+roles:
+  - Purchasing Manager
+  - Production Controller
+  - Finance Manager
+  - Quality Manager
+
+rules:
+
+  # ---- Traceability (EN 1090) ------------------------------------------------
+
+  - id: DQ-01
+    name: Heat number on every goods receipt
+    description: Every delivery of steel booked into stock records the mill's heat number, so each piece can be traced to its cast.
+    dimension: completeness
+    severity: critical
+    system_of_record: corvus_mrp
+    owner: Quality Manager
+    threshold: 1.0
+    consequence: Steel cannot be traced to its mill certificate. Under EN 1090-2 factory production control that is a nonconformity, and the finished steelwork cannot be UKCA or CE marked until it is resolved.
+    corrective_action: Take the heat number from the delivery ticket or the steel itself and add it to the goods received note. If it cannot be found, quarantine the material.
+    covers_defects: [6]
+    check:
+      sql: |
+        SELECT grn_no AS record_key, heat_number IS NOT NULL AS passed,
+               coalesce(heat_number, '(blank)') || ' on ' || po_no AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_goods_received
+
+  - id: DQ-02
+    name: Mill certificate on every goods receipt
+    description: Every delivery of steel references its EN 10204 3.1 mill certificate.
+    dimension: completeness
+    severity: critical
+    system_of_record: corvus_mrp
+    owner: Quality Manager
+    threshold: 1.0
+    consequence: Without the certificate there is no evidence of chemistry or strength. The steel cannot be used on EXC2 or higher work, and an auditor will raise a major finding.
+    corrective_action: Request the 3.1 certificate from the supplier, file it, and record its reference on the goods received note.
+    covers_defects: [6]
+    check:
+      sql: |
+        SELECT grn_no AS record_key, mill_cert_ref IS NOT NULL AS passed,
+               coalesce(mill_cert_ref, '(blank)') || ' on ' || po_no AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_goods_received
+
+  - id: DQ-03
+    name: Steel grade stated on every order and receipt
+    description: Every purchase order and goods received note names the steel grade, not just the section size.
+    dimension: completeness
+    severity: critical
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: Where a section is stocked in more than one grade, an order without a grade may bring in S275 steel for an S355 design. That is a structural safety risk, and stock cannot be allocated to jobs with confidence.
+    corrective_action: Amend the purchase order to the full material code including grade. For receipts, read the grade from the mill certificate and correct the GRN.
+    covers_defects: [1]
+    check:
+      sql: |
+        SELECT p.po_no AS record_key, x.status = 'auto' AS passed,
+               trim(p.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates) AS observed,
+               p._source_file AS source_file, p._source_row AS source_row
+        FROM staging.corvus_mrp_purchase_orders p
+        JOIN core.material_xref x ON x.source_table = 'purchase_orders' AND x.source_code = p.material_code
+        UNION ALL
+        SELECT g.grn_no, x.status = 'auto',
+               trim(g.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates),
+               g._source_file, g._source_row
+        FROM staging.corvus_mrp_goods_received g
+        JOIN core.material_xref x ON x.source_table = 'goods_received' AND x.source_code = g.material_code
+
+  # ---- Material master -----------------------------------------------------
+
+  - id: DQ-04
+    name: Materials recorded under their canonical code
+    description: Each material is recorded under one agreed code, such as UB203X133X25-S355J2, not several spellings.
+    dimension: consistency
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 0.98
+    consequence: The same beam shows as several stock items. Stock looks short when it is not, buyers reorder what is already in the yard, and tonnage reports split one material into many lines.
+    corrective_action: Merge the variant code into the canonical code in Corvus and block the variant from further use.
+    covers_defects: [1]
+    check:
+      sql: |
+        SELECT b.wo_no || '/' || b.line_no AS record_key,
+               x.method IN ('canonical_code', 'non_section_passthrough') AS passed,
+               trim(b.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates) AS observed,
+               b._source_file AS source_file, b._source_row AS source_row
+        FROM staging.corvus_mrp_bom_lines b
+        JOIN core.material_xref x ON x.source_table = 'bom_lines' AND x.source_code = b.material_code
+             AND x.source_description IS NOT DISTINCT FROM b.description
+             AND x.source_grade IS NOT DISTINCT FROM b.grade
+             AND x.source_section_type IS NOT DISTINCT FROM b.section_type
+        UNION ALL
+        SELECT s.material_code || '|' || s.site || '|' || s.location,
+               x.method IN ('canonical_code', 'non_section_passthrough'),
+               trim(s.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates),
+               s._source_file, s._source_row
+        FROM staging.corvus_mrp_stock s
+        JOIN core.material_xref x ON x.source_table = 'stock' AND x.source_code = s.material_code
+             AND x.source_description IS NOT DISTINCT FROM s.description
+        UNION ALL
+        SELECT p.po_no, x.method = 'canonical_code',
+               trim(p.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates),
+               p._source_file, p._source_row
+        FROM staging.corvus_mrp_purchase_orders p
+        JOIN core.material_xref x ON x.source_table = 'purchase_orders' AND x.source_code = p.material_code
+        UNION ALL
+        SELECT g.grn_no, x.method = 'canonical_code',
+               trim(g.material_code) || ' -> ' || coalesce(x.canonical_code, x.proposed_code, x.candidates),
+               g._source_file, g._source_row
+        FROM staging.corvus_mrp_goods_received g
+        JOIN core.material_xref x ON x.source_table = 'goods_received' AND x.source_code = g.material_code
+
+  - id: DQ-05
+    name: One unit of measure per material
+    description: A material is counted in the same unit wherever it appears, in metres for sections and kilograms for plate.
+    dimension: consistency
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: A section bought in kilograms, stocked in 12 m bars and issued in metres cannot be reconciled. Stock value, material usage variance and scrap rates are all misstated.
+    corrective_action: Set the stocking unit on the material master, and add conversion factors for purchasing in kilograms.
+    covers_defects: [4]
+    check:
+      sql: |
+        SELECT canonical_code AS record_key, NOT uom_conflict AS passed,
+               'units seen: ' || observed_uoms AS observed
+        FROM core.material_golden
+
+  - id: DQ-06
+    name: Unit of measure valid for the material
+    description: Plate is transacted in kilograms, sections in metres, bars or kilograms, and consumables each.
+    dimension: validity
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: A plate issued in metres or a bolt ordered in kilograms produces nonsense quantities and costs on the job.
+    corrective_action: Correct the unit on the transaction and check the quantity was entered in that unit.
+    covers_defects: [4]
+    check:
+      sql: |
+        WITH t AS (
+          SELECT 'bom_lines' AS tbl, wo_no || '/' || line_no AS k, material_code, description, grade, section_type, uom,
+                 _source_file, _source_row FROM staging.corvus_mrp_bom_lines
+          UNION ALL SELECT 'stock', material_code || '|' || site || '|' || location, material_code, description, NULL,
+                 NULL, uom, _source_file, _source_row FROM staging.corvus_mrp_stock
+          UNION ALL SELECT 'purchase_orders', po_no, material_code, NULL, NULL, NULL, uom, _source_file, _source_row
+                 FROM staging.corvus_mrp_purchase_orders
+          UNION ALL SELECT 'goods_received', grn_no, material_code, NULL, NULL, NULL, uom, _source_file, _source_row
+                 FROM staging.corvus_mrp_goods_received)
+        SELECT t.k AS record_key,
+               CASE WHEN x.section_type = 'PLATE' THEN t.uom = 'KG'
+                    WHEN x.section_type IS NOT NULL THEN t.uom IN ('M', 'EA', 'KG')
+                    ELSE t.uom = 'EA' END AS passed,
+               trim(t.material_code) || ' in ' || t.uom AS observed, t._source_file AS source_file,
+               t._source_row AS source_row
+        FROM t JOIN core.material_xref x ON x.source_table = t.tbl AND x.source_code = t.material_code
+             AND x.source_description IS NOT DISTINCT FROM t.description
+             AND x.source_grade IS NOT DISTINCT FROM t.grade
+             AND x.source_section_type IS NOT DISTINCT FROM t.section_type
+
+  # ---- Supplier master -----------------------------------------------------
+
+  - id: DQ-07
+    name: One Corvus supplier code per supplier
+    description: Each supplier is set up once in Corvus. Duplicates are either confirmed by matching or corroborated by invoices.
+    dimension: uniqueness
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: Spend with one stockholder is split across codes. Volume rebates are missed, supplier performance looks better or worse than it is, and a stopped supplier can still be ordered from under its other code.
+    corrective_action: Nominate the surviving code, move open orders to it, and block the duplicate.
+    covers_defects: [2]
+    check:
+      sql: |
+        WITH e AS (SELECT supplier_id, count(*) FILTER (WHERE source_system = 'corvus_mrp') AS codes
+                   FROM core.supplier_xref GROUP BY 1),
+             corroborated AS (SELECT unnest(string_split(left_members || ', ' || right_members, ', ')) AS k
+                              FROM core.supplier_review_queue WHERE evidence_pos > 0)
+        SELECT x.source_code AS record_key,
+               NOT (e.codes > 1 OR 'corvus_mrp:' || x.source_code IN (SELECT k FROM corroborated)) AS passed,
+               x.source_name || ' = ' || g.canonical_name || ' (' || g.corvus_codes || ')' AS observed
+        FROM core.supplier_xref x JOIN e USING (supplier_id) JOIN core.supplier_golden g USING (supplier_id)
+        WHERE x.source_system = 'corvus_mrp'
+
+  - id: DQ-08
+    name: One finance account per supplier
+    description: Each supplier has a single purchase ledger account.
+    dimension: uniqueness
+    severity: high
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 1.0
+    consequence: Invoices can be paid twice across two accounts, statements do not reconcile, and credit notes land on the wrong account.
+    corrective_action: Merge the accounts in the purchase ledger, checking bank details and open items on both first.
+    covers_defects: [2]
+    check:
+      sql: |
+        WITH e AS (SELECT supplier_id, count(*) FILTER (WHERE source_system = 'finance') AS accounts
+                   FROM core.supplier_xref GROUP BY 1)
+        SELECT x.source_code AS record_key, e.accounts <= 1 AS passed,
+               x.source_name || ' = ' || g.canonical_name || ' (' || g.finance_accounts || ')' AS observed
+        FROM core.supplier_xref x JOIN e USING (supplier_id) JOIN core.supplier_golden g USING (supplier_id)
+        WHERE x.source_system = 'finance'
+
+  - id: DQ-09
+    name: Every Corvus supplier linked to a finance account
+    description: Every supplier steel is ordered from in Corvus can be matched with confidence to the account finance pays.
+    dimension: consistency
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: Orders and payments cannot be tied together, so the three-way match fails for that supplier and spend analysis is incomplete.
+    corrective_action: Record the finance account number against the Corvus supplier code, or resolve the matching review item.
+    covers_defects: [2]
+    check:
+      sql: |
+        SELECT source_code AS record_key, status = 'auto' AS passed,
+               source_name || ': ' || status || coalesce(' to ' || best_counterpart || ' at ' || score, '') AS observed
+        FROM core.supplier_xref WHERE source_system = 'corvus_mrp'
+
+  # ---- Jobs ------------------------------------------------------------------
+
+  - id: DQ-10
+    name: Finance job codes exist in Corvus
+    description: Every job code finance posts costs or invoices to corresponds to a Corvus job.
+    dimension: consistency
+    severity: high
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 1.0
+    consequence: Costs and revenue on these jobs appear in finance with no production record, so job margin cannot be reported and WIP may be misstated.
+    corrective_action: Identify the Corvus job, or confirm the job is closed and archived, and record the mapping. Stop new postings to unmapped codes.
+    covers_defects: [3]
+    check:
+      sql: |
+        SELECT finance_job_code AS record_key, mrp_matched AS passed,
+               finance_job_code || ' -> ' || coalesce(job_no, 'no Corvus job') AS observed
+        FROM core.finance_jobs
+
+  - id: DQ-11
+    name: Sales invoices raised against a Corvus job
+    description: Every sales invoice or application for payment names a job that exists in Corvus.
+    dimension: consistency
+    severity: high
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 1.0
+    consequence: Revenue cannot be matched to the work that earned it. Margin by contract is wrong and retention releases cannot be tracked.
+    corrective_action: Correct the job code on the invoice, or map the legacy job to its Corvus successor.
+    covers_defects: [3]
+    check:
+      sql: |
+        SELECT invoice_no AS record_key, job_matched AS passed,
+               job_code || ' ' || customer_name || ' £' || printf('%.2f', net_amount) AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM core.sales_invoices
+
+  # ---- Purchase to pay -------------------------------------------------------
+
+  - id: DQ-12
+    name: Overdue purchase orders have a goods receipt
+    description: Once the promised date has passed, steel on order has been received or the order has been chased.
+    dimension: completeness
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 0.97
+    consequence: Either steel has not arrived and fabrication will stall, or it has arrived and was never booked in, so stock is understated and the invoice will fail the three-way match.
+    corrective_action: Chase the supplier for delivery, or find the delivery ticket and book the receipt.
+    covers_defects: [5]
+    check:
+      sql: |
+        SELECT p.po_no AS record_key, g.po_no IS NOT NULL AS passed,
+               trim(p.supplier_name) || ', promised ' || strftime(p.promised_date, '%d/%m/%Y') AS observed,
+               p._source_file AS source_file, p._source_row AS source_row
+        FROM staging.corvus_mrp_purchase_orders p
+        LEFT JOIN (SELECT DISTINCT po_no FROM staging.corvus_mrp_goods_received) g ON g.po_no = p.po_no
+        WHERE p.promised_date <= DATE '${as_of_date}' - ${receipt_grace_days}
+
+  - id: DQ-13
+    name: Goods receipts invoiced within 30 days
+    description: Steel that has been received is invoiced by the supplier within a month.
+    dimension: completeness
+    severity: high
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 0.97
+    consequence: Received-not-invoiced liabilities are missing from the accounts, month-end accruals are understated, and a late invoice may bypass the match.
+    corrective_action: Accrue the receipt at order value and ask the supplier for the invoice.
+    covers_defects: [5]
+    check:
+      sql: |
+        SELECT g.grn_no AS record_key, i.po_reference IS NOT NULL AS passed,
+               g.po_no || ', received ' || strftime(g.received_date, '%d/%m/%Y') AS observed,
+               g._source_file AS source_file, g._source_row AS source_row
+        FROM staging.corvus_mrp_goods_received g
+        LEFT JOIN (SELECT DISTINCT po_reference FROM staging.finance_purchase_invoices
+                   WHERE po_reference IS NOT NULL) i ON i.po_reference = g.po_no
+        WHERE g.received_date <= DATE '${as_of_date}' - ${invoice_grace_days}
+
+  - id: DQ-14
+    name: Invoice within tolerance of order value
+    description: A supplier invoice is no more than 5% above the value of the purchase order it references.
+    dimension: accuracy
+    severity: critical
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 1.0
+    consequence: Overcharges are paid without challenge. Across a year of steel buying that is a direct margin loss.
+    corrective_action: Put the invoice on hold, query the price or quantity with the supplier, and pay only the agreed amount.
+    covers_defects: [5]
+    check:
+      sql: |
+        SELECT i.invoice_no AS record_key, i.net_amount <= p.order_value * (1 + ${invoice_tolerance}) AS passed,
+               i.po_reference || ': invoice £' || printf('%.2f', i.net_amount) || ' vs order £'
+                 || printf('%.2f', p.order_value) || ' (' || printf('%+.1f', 100 * (i.net_amount / p.order_value - 1))
+                 || '%)' AS observed,
+               i._source_file AS source_file, i._source_row AS source_row
+        FROM core.purchase_invoices i JOIN core.purchase_orders p ON p.po_no = i.po_reference
+
+  - id: DQ-15
+    name: Purchase dates in sequence
+    description: For each order, the order date comes before the promised date, the receipt comes after the order, and the invoice comes after the receipt. Early delivery is allowed.
+    dimension: validity
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: Out-of-sequence dates break supplier lead-time and on-time delivery measures, and usually mean a document was keyed against the wrong order.
+    corrective_action: Check the dates against the paper documents and correct the one that was mistyped.
+    check:
+      sql: |
+        WITH g AS (SELECT po_no, min(received_date) AS received FROM staging.corvus_mrp_goods_received GROUP BY 1),
+             i AS (SELECT po_reference, min(invoice_date) AS invoiced FROM staging.finance_purchase_invoices
+                   WHERE po_reference IS NOT NULL GROUP BY 1)
+        SELECT p.po_no AS record_key,
+               p.order_date < p.promised_date AND coalesce(g.received >= p.order_date, true)
+                 AND coalesce(i.invoiced >= g.received, true) AS passed,
+               'ordered ' || strftime(p.order_date, '%d/%m/%Y') || ', promised ' || strftime(p.promised_date, '%d/%m/%Y')
+                 || ', received ' || coalesce(strftime(g.received, '%d/%m/%Y'), '-')
+                 || ', invoiced ' || coalesce(strftime(i.invoiced, '%d/%m/%Y'), '-') AS observed,
+               p._source_file AS source_file, p._source_row AS source_row
+        FROM staging.corvus_mrp_purchase_orders p LEFT JOIN g ON g.po_no = p.po_no
+        LEFT JOIN i ON i.po_reference = p.po_no
+
+  # ---- Job costing -----------------------------------------------------------
+
+  - id: DQ-16
+    name: Labour cost reconciles to booked hours
+    description: Labour cost finance charges to a job equals the hours operators booked on the shop floor at the standard rate, within 5%.
+    dimension: consistency
+    severity: high
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 0.95
+    consequence: Job margins are wrong. A job looks profitable in finance while the shop floor spent far more hours on it, or the reverse, so pricing and estimating learn the wrong lessons.
+    corrective_action: Compare the payroll allocation with the booking sheets for the job, and correct whichever is wrong in the period it happened.
+    covers_defects: [7]
+    check:
+      python: fabsync.quality.checks:labour_reconciliation
+
+  # ---- Stock -----------------------------------------------------------------
+
+  - id: DQ-17
+    name: Stock count agrees with the book
+    description: When a stock line is counted, the quantity found matches the quantity Corvus holds.
+    dimension: accuracy
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 0.98
+    consequence: Planning allocates steel that is not there, or buys steel that is. Stock valuation at year end is misstated.
+    corrective_action: Recount the line. If the difference holds, post a stock adjustment with a reason code and look for the missing issue or offcut return.
+    covers_defects: [8]
+    check:
+      sql: |
+        SELECT trim(material_code) || '|' || site || '|' || trim(location) AS record_key,
+               counted_qty = qty_on_hand AS passed,
+               'book ' || printf('%g', qty_on_hand) || ' ' || uom || ', counted ' || coalesce(printf('%g', counted_qty), '-') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_stock
+
+  - id: DQ-18
+    name: Stock counted within 90 days
+    description: Every stock line has been counted in the last quarter.
+    dimension: timeliness
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 0.9
+    consequence: Old counts hide losses and unreturned offcuts. The longer the gap, the bigger the surprise at year end.
+    corrective_action: Add the line to this week's cycle count.
+    check:
+      sql: |
+        SELECT trim(material_code) || '|' || site || '|' || trim(location) AS record_key,
+               last_count_date >= DATE '${as_of_date}' - ${stock_count_days} AS passed,
+               'last counted ' || coalesce(strftime(last_count_date, '%d/%m/%Y'), 'never') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_stock
+
+  # ---- Shop-floor records ------------------------------------------------------
+
+  - id: DQ-19
+    name: No duplicate rows in shop-floor records
+    description: Each booking, delivery note, NCR and capacity line is entered once.
+    dimension: uniqueness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.995
+    consequence: Duplicated bookings double-count hours on the job. Duplicated delivery notes overstate tonnage despatched.
+    corrective_action: Delete the repeated row from the spreadsheet. It is already held in quarantine and excluded from reporting.
+    covers_defects: [9]
+    check:
+      sql: |
+        WITH r AS (
+          SELECT _source_file AS f, _source_row AS n FROM raw.shop_floor_time_bookings
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_delivery_notes
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_ncr_log
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_weekly_capacity)
+        SELECT r.f || ':' || r.n AS record_key, q.quarantine_id IS NULL AS passed,
+               coalesce('repeat of an earlier row (' || q.quarantine_id || ')', '') AS observed,
+               r.f AS source_file, r.n AS source_row
+        FROM r LEFT JOIN governance.quarantine q ON q.source_file = r.f AND q.source_row = r.n AND q.rule_id = 'ST-02'
+
+  - id: DQ-20
+    name: Shop-floor entries readable
+    description: Every hand-entered value can be read as what it claims to be. Hours are numbers, dates are real dates, and a booking names a works order.
+    dimension: validity
+    severity: high
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.999
+    consequence: Unreadable rows are quarantined and left out of every report, so hours, despatches and NCR costs are understated until someone fixes them.
+    corrective_action: Correct the value in the spreadsheet using the quarantine record, which shows exactly what was typed.
+    covers_defects: [9]
+    check:
+      sql: |
+        WITH r AS (
+          SELECT _source_file AS f, _source_row AS n FROM raw.shop_floor_time_bookings
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_delivery_notes
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_ncr_log
+          UNION ALL SELECT _source_file, _source_row FROM raw.shop_floor_weekly_capacity)
+        SELECT r.f || ':' || r.n AS record_key, q.quarantine_id IS NULL AS passed,
+               coalesce(q.failing_column || ' = "' || q.failing_value || '" (' || q.rule_id || ')', '') AS observed,
+               r.f AS source_file, r.n AS source_row
+        FROM r LEFT JOIN governance.quarantine q ON q.source_file = r.f AND q.source_row = r.n
+             AND q.rule_id IN ('ST-03', 'ST-04', 'ST-05', 'ST-06', 'ST-07')
+
+  - id: DQ-21
+    name: Booking numbers unique
+    description: A booking number is used once. An edited copy of a row gets a new number.
+    dimension: uniqueness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 1.0
+    consequence: When two different bookings share a number, only the first is kept, so the hours on the edited copy are lost.
+    corrective_action: Give the second booking a new number and confirm which hours are right with the operator.
+    covers_defects: [9]
+    check:
+      sql: |
+        SELECT CAST(r.booking_id AS VARCHAR) || ' @ ' || r._source_row AS record_key, q.quarantine_id IS NULL AS passed,
+               coalesce('booking ' || r.booking_id || ' reused with ' || trim(r.hours) || ' h', '') AS observed,
+               r._source_file AS source_file, r._source_row AS source_row
+        FROM raw.shop_floor_time_bookings r
+        LEFT JOIN governance.quarantine q ON q.source_file = r._source_file AND q.source_row = r._source_row
+             AND q.rule_id = 'ST-08'
+
+  - id: DQ-22
+    name: Shop-floor dates in the UK house format
+    description: Dates on booking sheets, delivery notes and the NCR log are written DD/MM/YYYY, not in a mix of formats.
+    dimension: consistency
+    severity: low
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.95
+    consequence: A date such as 03/04/2025 is read differently by different people and tools. Mixed formats cause silent month and day swaps when data is copied between sheets.
+    corrective_action: Format the date columns in the supervisors' templates as DD/MM/YYYY and lock them.
+    covers_defects: [9]
+    check:
+      sql: |
+        SELECT _source_file || ':' || _source_row AS record_key,
+               regexp_matches(trim(booking_date), '^\d{2}/\d{2}/\d{4}$') AS passed, booking_date AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM raw.shop_floor_time_bookings WHERE trim(booking_date) <> ''
+        UNION ALL
+        SELECT _source_file || ':' || _source_row, regexp_matches(trim(despatch_date), '^\d{2}/\d{2}/\d{4}$'),
+               despatch_date, _source_file, _source_row
+        FROM raw.shop_floor_delivery_notes WHERE trim(despatch_date) <> ''
+        UNION ALL
+        SELECT _source_file || ':' || _source_row, regexp_matches(trim(raised_date), '^\d{2}/\d{2}/\d{4}$'),
+               raised_date, _source_file, _source_row
+        FROM raw.shop_floor_ncr_log WHERE trim(raised_date) <> ''
+
+  # ---- Referential integrity ---------------------------------------------------
+
+  - id: DQ-23
+    name: Time bookings against a real works order
+    description: Every hour booked on the shop floor is against a works order that exists in Corvus.
+    dimension: consistency
+    severity: high
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Hours on a works order Corvus has never heard of are charged to no job. Labour is lost from job costing and the real job looks cheaper than it was.
+    corrective_action: Find the intended works order, usually a transposed digit, and rebook the hours. The matching review queue suggests candidates.
+    covers_defects: [10]
+    check:
+      sql: |
+        SELECT CAST(booking_id AS VARCHAR) AS record_key, wo_matched AS passed,
+               works_order_raw || ' (' || printf('%g', hours) || ' h on ' || strftime(booking_date, '%d/%m/%Y') || ')' AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM core.time_bookings
+
+  - id: DQ-24
+    name: NCRs raised against a real works order
+    description: Every non-conformance report names a works order that exists in Corvus.
+    dimension: consistency
+    severity: high
+    system_of_record: shop_floor
+    owner: Quality Manager
+    threshold: 1.0
+    consequence: The cost of rework cannot be charged to the job, and repeat defects on a product line go unnoticed.
+    corrective_action: Correct the works order on the NCR.
+    check:
+      sql: |
+        SELECT ncr_no AS record_key, wo_matched AS passed, works_order_raw AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM core.ncrs
+
+  - id: DQ-25
+    name: BOM lines belong to a works order
+    description: Every bill of material line hangs off a works order that exists.
+    dimension: consistency
+    severity: critical
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Orphaned material demand drives purchasing for work that does not exist, and the material cost lands on no job.
+    corrective_action: Delete the orphaned lines, or reattach them to the correct works order.
+    check:
+      sql: |
+        SELECT wo_no || '/' || line_no AS record_key, wo_matched AS passed, trim(material_code) AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM core.bom_lines
+
+  - id: DQ-26
+    name: Started works orders have a bill of material
+    description: A works order that has been released or has progressed has material lines behind it.
+    dimension: completeness
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Material for the work is never demanded or issued, so it is bought ad hoc and its cost is missing from the job.
+    corrective_action: Build the BOM from the fabrication drawings before further work.
+    check:
+      sql: |
+        SELECT CAST(w.wo_no AS VARCHAR) AS record_key, EXISTS (SELECT 1 FROM core.bom_lines b WHERE b.wo_no = w.wo_no) AS passed,
+               w.job_no || ' ' || w.part_code || ' ' || w.status AS observed,
+               w._source_file AS source_file, w._source_row AS source_row
+        FROM core.works_orders w WHERE w.status NOT IN ('PLANNED', 'CANCELLED')
+
+  # ---- Mandatory fields --------------------------------------------------------
+
+  - id: DQ-27
+    name: Operator named on every booking
+    description: Every time booking names the operator who did the work.
+    dimension: completeness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.99
+    consequence: Welding cannot be tied to a qualified welder for EN ISO 9606 records, and productivity by operator cannot be measured.
+    corrective_action: Ask the supervisor to complete the operator from the clock card.
+    check:
+      sql: |
+        SELECT CAST(booking_id AS VARCHAR) AS record_key, operator IS NOT NULL AS passed,
+               'works order ' || works_order || ', ' || coalesce(operation, 'no operation') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_time_bookings
+
+  - id: DQ-28
+    name: Operation named on every booking
+    description: Every time booking says which operation was done, such as saw, drill, fit, weld, blast, paint or load.
+    dimension: completeness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.99
+    consequence: Hours cannot be compared with the routing, so bottlenecks at welding or blasting are invisible.
+    corrective_action: Complete the operation from the supervisor's day sheet.
+    check:
+      sql: |
+        SELECT CAST(booking_id AS VARCHAR) AS record_key, operation IS NOT NULL AS passed,
+               'works order ' || works_order || ', ' || coalesce(operator, 'no operator') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_time_bookings
+
+  - id: DQ-29
+    name: Promised date on every delivery note
+    description: Every despatch records the date the customer was promised.
+    dimension: completeness
+    severity: high
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 1.0
+    consequence: On-time-in-full (OTIF) cannot be measured for that despatch, which is the headline customer measure.
+    corrective_action: Take the promised date from the works order or the customer programme and add it to the delivery note.
+    check:
+      sql: |
+        SELECT dn_no AS record_key, promised_date IS NOT NULL AS passed,
+               job || ', despatched ' || strftime(despatch_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_delivery_notes
+
+  - id: DQ-30
+    name: Tonnage on every delivery note
+    description: Every despatch records the tonnage loaded.
+    dimension: completeness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.99
+    consequence: Tonnage despatched, the headline throughput figure, is understated, and haulage cannot be checked against the load.
+    corrective_action: Take the tonnage from the works order weight schedule.
+    check:
+      sql: |
+        SELECT dn_no AS record_key, tonnage IS NOT NULL AS passed, job || ' ' || coalesce(vehicle, '') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_delivery_notes
+
+  # ---- Validity and timeliness -------------------------------------------------
+
+  - id: DQ-31
+    name: Works order and NCR dates in sequence
+    description: A works order is planned to finish after it starts and does not finish before it starts. An NCR is closed after it is raised.
+    dimension: validity
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Lead times and NCR closure times come out negative or meaningless, and the schedule cannot be trusted.
+    corrective_action: Correct the mistyped date against the job file.
+    check:
+      sql: |
+        SELECT CAST(wo_no AS VARCHAR) AS record_key,
+               planned_start <= planned_finish AND coalesce(actual_finish >= planned_start, true) AS passed,
+               strftime(planned_start, '%d/%m/%Y') || ' to ' || strftime(planned_finish, '%d/%m/%Y')
+                 || ', finished ' || coalesce(strftime(actual_finish, '%d/%m/%Y'), '-') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_works_orders
+        UNION ALL
+        SELECT ncr_no, coalesce(closed_date >= raised_date, true),
+               'raised ' || strftime(raised_date, '%d/%m/%Y') || ', closed ' || coalesce(strftime(closed_date, '%d/%m/%Y'), '-'),
+               _source_file, _source_row
+        FROM staging.shop_floor_ncr_log
+
+  - id: DQ-32
+    name: Quantities and hours positive and plausible
+    description: Quantities on works orders, BOM lines, orders and receipts are above zero. A single booking is above zero and no more than 16 hours.
+    dimension: validity
+    severity: high
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Zero or negative quantities reverse stock and cost movements. Implausible hours inflate job cost.
+    corrective_action: Correct the quantity from the source document, or reverse the transaction and re-enter it.
+    check:
+      sql: |
+        SELECT 'WO ' || wo_no AS record_key, qty > 0 AS passed, 'qty ' || printf('%g', CAST(qty AS DOUBLE)) AS observed,
+               _source_file AS source_file, _source_row AS source_row FROM staging.corvus_mrp_works_orders
+        UNION ALL SELECT 'BOM ' || wo_no || '/' || line_no, qty > 0, 'qty ' || printf('%g', qty), _source_file, _source_row
+          FROM staging.corvus_mrp_bom_lines
+        UNION ALL SELECT po_no, qty > 0, 'qty ' || printf('%g', qty), _source_file, _source_row FROM staging.corvus_mrp_purchase_orders
+        UNION ALL SELECT grn_no, qty_received > 0, 'qty ' || printf('%g', qty_received), _source_file, _source_row
+          FROM staging.corvus_mrp_goods_received
+        UNION ALL SELECT 'booking ' || booking_id, hours > 0 AND hours <= ${max_booking_hours}, printf('%g', hours) || ' h', _source_file,
+          _source_row FROM staging.shop_floor_time_bookings
+
+  - id: DQ-33
+    name: Works orders closed off promptly
+    description: A works order is completed or closed within 30 days of its planned finish.
+    dimension: timeliness
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 0.95
+    consequence: Open works orders keep material and labour in WIP long after the work has gone, which overstates WIP and hides overruns.
+    corrective_action: Confirm the work is despatched, book any remaining hours, and close the works order.
+    check:
+      sql: |
+        SELECT CAST(wo_no AS VARCHAR) AS record_key, status IN ('COMPLETE', 'CLOSED') AS passed,
+               job_no || ' ' || status || ', planned finish ' || strftime(planned_finish, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM core.works_orders
+        WHERE status <> 'CANCELLED' AND planned_finish <= DATE '${as_of_date}' - ${works_order_close_days}
+
+  - id: DQ-34
+    name: NCRs closed within 60 days
+    description: A non-conformance is dispositioned and closed within two months of being raised.
+    dimension: timeliness
+    severity: high
+    system_of_record: shop_floor
+    owner: Quality Manager
+    threshold: 0.9
+    consequence: Open NCRs mean suspect steelwork may already be on site. They are also an EN 1090 audit finding and a sign that root causes are not being fixed.
+    corrective_action: Agree the disposition (rework, use as is, or scrap), record the corrective action, and close the NCR.
+    check:
+      sql: |
+        SELECT ncr_no AS record_key,
+               closed_date IS NOT NULL AND closed_date - raised_date <= ${ncr_close_days} AS passed,
+               category || ', raised ' || strftime(raised_date, '%d/%m/%Y') || ', '
+                 || coalesce('closed after ' || (closed_date - raised_date) || ' days', 'still open') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_ncr_log
+        WHERE raised_date <= DATE '${as_of_date}' - ${ncr_close_days}

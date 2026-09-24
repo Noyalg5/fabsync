@@ -66,6 +66,29 @@ def write_balance(con: duckdb.DuckDBPyConnection, run_id: str) -> None:
                    SET balanced = (data_lines = staged_rows + quarantined_rows AND core_rows = staged_rows)""")
 
 
+HISTORY_TABLES = ("dq_run", "dq_results")
+
+
+def carry_history(con: duckdb.DuckDBPyConnection, previous: Path) -> None:
+    """Keep data quality history across rebuilds so the index can be trended.
+
+    Everything else is rebuilt from the source files; run history cannot be, so
+    it is copied from the warehouse being replaced.
+    """
+    if not previous.exists():
+        return
+    con.execute(f"ATTACH '{previous}' AS previous (READ_ONLY)")
+    try:
+        present = {t for (t,) in con.execute(
+            "SELECT table_name FROM duckdb_tables() WHERE database_name = 'previous' AND schema_name = 'governance'"
+        ).fetchall()}
+        for table in HISTORY_TABLES:
+            if table in present:
+                con.execute(f"CREATE TABLE governance.{table} AS SELECT * FROM previous.governance.{table}")
+    finally:
+        con.execute("DETACH previous")
+
+
 def run_ingest(raw_dir: Path = RAW_DIR, warehouse: Path = WAREHOUSE_PATH, report: Path = REPORT_PATH,
                config: Path = CONFORMANCE_PATH) -> IngestResult:
     missing = [t.file for s in SOURCES for t in s.tables if not (raw_dir / t.file).exists()]
@@ -99,6 +122,7 @@ def run_ingest(raw_dir: Path = RAW_DIR, warehouse: Path = WAREHOUSE_PATH, report
                     [run_id, started, now(), "succeeded" if balanced else "unbalanced", str(raw_dir),
                      sum(len(s.tables) for s in SOURCES), rows_raw, rows_staged, rows_q,
                      "All data is synthetic."])
+        carry_history(con, warehouse)
         con.execute("CHECKPOINT")
         con.close()
     except BaseException:

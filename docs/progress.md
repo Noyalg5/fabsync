@@ -2,6 +2,34 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 4: Data quality engine (2026-09-24)
+
+**Done**
+- `config/dq_rules.yaml`: 34 declarative rules covering all six dimensions, four severities and
+  four owning roles. 33 are SQL checks and one is a Python check. Every rule states its business
+  description, consequence and corrective action. Between them they cover all ten seeded defects,
+  plus completeness, referential integrity, UoM validity, date sequence, duplicates, positive
+  quantities, orphans, stale counts and timeliness.
+- `src/fabsync/quality/`: the rule loader validates the schema and refuses bad files. The engine
+  appends results by run id. A rule that errors is recorded and the rest still run, with a
+  non-zero exit.
+- Scorecards by owning role, source system, dimension and severity, as views and in
+  `docs/dq-scorecard.md`.
+- Exception queue of the latest run's failing records, with severity, owner and corrective action.
+- Headline data quality index, documented in the engine and the scorecard. The current value is
+  92.1, with 7 of 34 rules met and 4 critical rules breached: three on EN 1090 traceability and one on invoice overcharging.
+- `make ingest` now carries quality history across rebuilds. `make quality` was added and chained
+  into `run-all`.
+- New dependencies: PyYAML, and pytz, which DuckDB needs to return time-zone-aware timestamps to
+  Python.
+- 29 new tests. Each seeded defect's exceptions match the manifest exactly. The suite also covers
+  the documented formula, three scorecards, the trend, history surviving re-ingest, a broken rule
+  that is not fatal, and a rule schema check for each field.
+
+**Next**
+- Mission 5: reconciliation. Apply approved matches and survivorship without destroying originals,
+  and show what changes.
+
 ## Mission 3: Master data matching (2026-09-24)
 
 **Done**
