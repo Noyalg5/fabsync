@@ -1,0 +1,4 @@
+#!/bin/sh
+sed -i.bak -E '/^Co-Authored-By:.*(claude|anthropic)/Id; /Generated with/Id; /claude\.ai\/code/Id; /Claude-Session:/Id' "$1"
+rm -f "$1.bak"
+printf '%s\n' "$(cat "$1")" > "$1"
