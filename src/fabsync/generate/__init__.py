@@ -1,1 +1,1 @@
-"""Synthetic data generation for the three source systems (MRPII, finance, shop-floor spreadsheets)."""
+"""Synthetic data generation for the three source systems."""

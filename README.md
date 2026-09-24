@@ -9,6 +9,7 @@ represented.
 ## Quick start
 
 ```sh
+make generate  # rebuild the synthetic source extracts in data/raw/
 make run-all   # generate synthetic data, load the warehouse, run every stage
 make app       # open the Streamlit demonstrator
 make test      # run the test suite

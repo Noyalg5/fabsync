@@ -52,7 +52,7 @@ source of project context is this file.
 | `src/fabsync/kpi/` | Management KPIs |
 | `app/` | Streamlit demonstrator |
 | `config/` | Rules, thresholds, mappings |
-| `data/raw/` | Generated source extracts (not committed) |
+| `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | DuckDB file (not committed) |
 | `docs/` | This brief, progress log, design notes |
 | `tests/` | pytest suite |
@@ -115,6 +115,27 @@ Make targets: `generate`, `ingest`, `run-all`, `app`, `pack`, `test`, `clean`.
 | Lineage | Which source record, field and extract a reconciled value came from. |
 | Survivorship | Rules deciding which source wins when values conflict. |
 | Data owner / steward | Named accountability for a master data domain and for resolving conflicts. |
+
+## Synthetic source generation
+
+`make generate` runs `fabsync.ingest.generate_sources` (seed 1090, 24 months to
+2026-08-31) and rebuilds `data/raw/` in about a second. The ten seeded defects
+and the exact identifiers they touch are written to `data/raw/defects.json`;
+`tests/test_generate_sources.py` asserts each one is present. Later stages must
+detect them, and their tests should read the same manifest.
+
+| # | Defect | Where |
+| --- | --- | --- |
+| 1 | Material code drift, four spellings per section | Corvus BOM, stock, POs, GRNs |
+| 2 | Supplier duplicates, three names and three codes | Corvus POs, finance supplier master |
+| 3 | Job code mapping gap, ~12% finance-only codes | Finance job costs and sales invoices |
+| 4 | UoM conflicts, M / EA / KG for one material | Corvus BOM, stock, POs, GRNs |
+| 5 | Three-way match failures | Corvus POs and GRNs, finance purchase invoices |
+| 6 | Traceability gaps, ~18% GRNs without heat or cert | Corvus GRNs |
+| 7 | Labour variance | Shop-floor time bookings, finance job costs |
+| 8 | Stock accuracy, ~15% of lines | Corvus stock |
+| 9 | Structural noise | Duplicates, padding, mixed dates, numbers as text |
+| 10 | Orphan works orders | Shop-floor time bookings |
 
 ## Naming and style
 

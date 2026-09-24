@@ -20,7 +20,7 @@ venv:
 	$(PIP) install --quiet -e ".[dev]"
 
 generate: venv
-	$(PY) -m fabsync.generate
+	$(PY) -m fabsync.ingest.generate_sources
 
 ingest: venv
 	$(PY) -m fabsync.ingest
