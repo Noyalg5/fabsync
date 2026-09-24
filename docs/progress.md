@@ -2,6 +2,33 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 3: Master data matching (2026-09-24)
+
+**Done**
+- `src/fabsync/match/`: four matchers, a shared audit context, an orchestrator and a report writer.
+  `make match` runs them in one transaction; `make run-all` chains generate, ingest and match.
+- **Materials:** parser for UK section designations, handling kind prefix and suffix, long names
+  and plate forms. 423 written forms resolve to 47 golden materials. Every BOM line auto-matches.
+  Codes without a grade on POs, GRNs and stock go to review rather than being guessed.
+- **Material golden record:** survivorship puts identity from the parse, grade from the BOM column
+  first, mass from the section catalogue first, and lists every unit of measure seen. The 14
+  seeded UoM conflicts are flagged.
+- **Suppliers:** rapidfuzz with first-token blocking and abbreviation expansion. 21 of 24 Corvus
+  codes auto-matched. 4 review decisions carry invoice evidence. Mersey Tube is correctly not
+  merged at 67, and is reported as a likely miss because its invoices corroborate.
+- **Jobs:** three-way crosswalk with customer corroboration. The 20 finance-only codes are listed
+  as unmatched.
+- **Works orders:** 3,473 references parse, none fail. The 6 orphans each get a transposition
+  candidate for review, with site and date evidence.
+- `docs/match-quality-report.md` and `governance.match_quality` cover auto %, queue size,
+  unmatched and effort. The estimate is 9.1 hours for 93 review decisions.
+- 67 tests pass. They check precision and recall against the seeded manifest, no source change,
+  bands, no merge below the floor, idempotent rerun, and thresholds read from config.
+
+**Next**
+- Mission 4: data quality rules and governance: named rules, owners, and the controls that stop
+  each defect recurring.
+
 ## Mission 2: Ingestion layer and warehouse (2026-09-24)
 
 **Done**

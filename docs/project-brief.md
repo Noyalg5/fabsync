@@ -46,19 +46,19 @@ source of project context is this file.
 | --- | --- |
 | `src/fabsync/generate/` | Synthetic source extracts for the three systems |
 | `src/fabsync/ingest/` | Synthetic generator; per-system contracts (`corvus_mrp.py`, `finance.py`, `shop_floor.py`); raw, staging, core, profiling; `pipeline.py` orchestrates |
-| `src/fabsync/match/` | Entity matching across systems |
+| `src/fabsync/match/` | Matchers for materials, suppliers, jobs, works orders; `pipeline.py` orchestrates, `report.py` writes the quality report |
 | `src/fabsync/quality/` | Data quality rules and governance checks |
 | `src/fabsync/reconcile/` | Golden records with source lineage |
 | `src/fabsync/kpi/` | Management KPIs |
 | `app/` | Streamlit demonstrator |
-| `config/` | Rules, thresholds, mappings; `conformance.toml` holds site and operation aliases |
+| `config/` | `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
-| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md` |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md` and `match-quality-report.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
-Make targets: `generate`, `ingest`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `run-all`, `app`, `pack`, `test`, `clean`.
 
 ## The three source systems
 
@@ -155,6 +155,30 @@ and example queries: `docs/lineage-and-quarantine.md`.
 - **Core never gains or loses rows.** Joins are left joins with a matched flag. Matching of
   materials, suppliers and customers belongs to the match stage, not core.
 - Rule ids (RAW-, ST-, CO-) are stable identifiers used in lineage, quarantine and tests.
+
+## Master data matching
+
+`make match` (and `make run-all`) runs four matchers against the warehouse in one transaction. It
+writes only its own tables, so it reruns without re-ingesting. Output:
+`docs/match-quality-report.md` and `governance.match_quality`.
+
+- **Bands** are set in `config/matching.toml`: 95 or more auto-accept, 80 to 95 human review,
+  below 80 never merged.
+- **Audit trail:** every match record carries `method`, `score`, `matched_on`, `status`,
+  `matched_at`, `match_run_id`, and keeps the source value beside the canonical one. Nothing is
+  merged destructively.
+- **Materials:** `core.material_xref` holds one row per way a material is written per table.
+  `core.material_golden` holds one row per canonical code, built by survivorship. Grade comes from
+  the BOM grade column, then the code, then the description. It is never guessed when several
+  grades are held.
+- **Suppliers:** rapidfuzz, blocking on the first normalised token, abbreviations expanded.
+  Accepted links are clustered into entities in `core.supplier_golden`. Review items are one per
+  pair of entities, with invoice evidence.
+- **Jobs:** `core.job_xref` holds every source value, `core.job_crosswalk` one row per job, and
+  `core.job_unmatched` the gaps on all three sides.
+- **Works orders:** `core.works_order_xref`. Numbers Corvus does not hold get transposition
+  candidates in the review queue.
+- **Combined review queue:** `core.v_match_review_queue`.
 
 ## Naming and style
 

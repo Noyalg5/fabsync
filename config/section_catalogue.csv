@@ -1,0 +1,36 @@
+# Reference section catalogue for the FabSync demonstrator, which uses synthetic data only. Nominal mass per metre by designation; plate mass is derived as 7.85 kg/m2 per mm.
+kind,designation,kg_per_m,note
+UB,203x133x25,25.1,universal beam
+UB,254x146x31,31.1,universal beam
+UB,305x165x40,40.3,universal beam
+UB,356x171x51,51.0,universal beam
+UB,406x178x60,60.1,universal beam
+UB,457x191x82,82.0,universal beam
+UB,533x210x101,101.0,universal beam
+UB,610x229x125,125.1,universal beam
+UC,152x152x23,23.0,universal column
+UC,203x203x46,46.1,universal column
+UC,254x254x73,73.1,universal column
+UC,305x305x97,96.9,universal column
+PFC,100x50x10,10.2,parallel flange channel
+PFC,150x75x18,17.9,parallel flange channel
+PFC,200x75x23,23.4,parallel flange channel
+PFC,260x75x28,27.6,parallel flange channel
+SHS,50x50x3,4.35,square hollow section
+SHS,80x80x5,11.7,square hollow section
+SHS,100x100x6.3,18.4,square hollow section
+SHS,150x150x8,35.4,square hollow section
+RHS,100x50x4,8.49,rectangular hollow section
+RHS,150x100x6.3,23.1,rectangular hollow section
+RHS,200x100x8,35.1,rectangular hollow section
+CHS,60.3x3.2,4.51,circular hollow section
+CHS,114.3x5,13.5,circular hollow section
+CHS,168.3x6.3,25.2,circular hollow section
+CHS,219.1x8,41.6,circular hollow section
+L,50x50x6,4.47,equal angle
+L,75x75x8,8.99,equal angle
+L,100x100x10,15.0,equal angle
+L,150x90x12,21.6,unequal angle
+FLAT,50x8,3.14,flat bar
+FLAT,100x10,7.85,flat bar
+FLAT,150x12,14.1,flat bar

@@ -1,9 +1,6 @@
-"""Command-line entry point for the match stage. Logic to follow in a later mission."""
+"""Command-line entry point: ``python -m fabsync.match`` runs all four matchers."""
 
-
-def main() -> None:
-    raise SystemExit("fabsync.match: not yet implemented")
-
+from fabsync.match.pipeline import main
 
 if __name__ == "__main__":
     main()

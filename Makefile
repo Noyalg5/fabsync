@@ -3,11 +3,12 @@ PY      := .venv/bin/python
 PIP     := .venv/bin/pip
 EXPORT  := export
 
-.PHONY: help venv generate ingest run-all app pack test clean
+.PHONY: help venv generate ingest match run-all app pack test clean
 
 help:
 	@echo "generate  - create synthetic source extracts in data/raw/"
 	@echo "ingest    - rebuild the DuckDB warehouse: raw, staging, core, lineage, quarantine, profiling"
+	@echo "match     - rebuild crosswalks, golden records and review queues; write the match quality report"
 	@echo "run-all   - generate, ingest, match, quality, reconcile, kpi"
 	@echo "app       - launch the Streamlit demonstrator"
 	@echo "pack      - bundle the demo (warehouse, exports, docs) into export/"
@@ -28,8 +29,10 @@ ingest: venv
 	test -f data/raw/defects.json || $(PY) -m fabsync.ingest.generate_sources
 	$(PY) -m fabsync.ingest
 
-run-all: generate ingest
+match: venv
 	$(PY) -m fabsync.match
+
+run-all: generate ingest match
 	$(PY) -m fabsync.quality
 	$(PY) -m fabsync.reconcile
 	$(PY) -m fabsync.kpi

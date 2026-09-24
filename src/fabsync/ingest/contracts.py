@@ -80,4 +80,9 @@ RULES: dict[str, str] = {
     "CO-04": "Operation alias conformed to routing operation using config/conformance.toml",
     "CO-05": "Join to parent recorded as a matched flag; unmatched rows retained, never dropped",
     "CO-06": "Conformed table built from staging with no row loss",
+    "MA-01": "Material code and description parsed into section type, dimensions and grade; canonical code emitted",
+    "MA-02": "Material golden record built by the documented survivorship rule",
+    "MA-03": "Supplier names fuzzy matched within blocks: >=95 auto-accept, 80-95 review queue, <80 never merged",
+    "MA-04": "Job crosswalk across MRPII job_no, finance job_code and shop-floor free-text references",
+    "MA-05": "Works order free text parsed to a Corvus wo_no; unknown numbers checked for transposition candidates",
 }

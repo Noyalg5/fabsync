@@ -13,7 +13,7 @@ Running it twice over the same raw files gives the same tables; only run ids and
 | `raw` | One table per source file, e.g. `raw.shop_floor_time_bookings` | Exactly as received: every column text, padding kept, nothing cleaned. Each row carries `_source_file` and `_source_row`, the physical line in the file. |
 | `staging` | The same tables, typed | Trimmed, blanks to NULL, dates parsed, numerics coerced. Rows that fail a rule are quarantined, not dropped. |
 | `core` | Conformed and joined tables, e.g. `core.time_bookings`, `core.jobs` | Works orders, jobs, sites and operations conformed; children joined to parents with a matched flag. Never gains or loses a row. |
-| `governance` | Lineage, quarantine, contracts, rules, profiling, balance, run log | The evidence. |
+| `governance` | Lineage, quarantine, contracts, rules, profiling, balance, run log, match quality | The evidence. |
 
 Every staging and core row keeps `_source_file` and `_source_row`, so any figure can be traced back
 to the line a person would see opening the file.
@@ -50,6 +50,11 @@ that fails leaves the flow at that rule, so the rows out of one step are the row
 | CO-04 | Operation alias conformed using `config/conformance.toml` |
 | CO-05 | Join to parent recorded as a matched flag; unmatched rows kept |
 | CO-06 | Core table built with no row loss |
+| MA-01 | Material codes and descriptions parsed; canonical code emitted |
+| MA-02 | Material golden record built by survivorship |
+| MA-03 | Supplier fuzzy match: 95+ auto, 80 to 95 review, under 80 never merged |
+| MA-04 | Job crosswalk across Corvus, finance and shop floor |
+| MA-05 | Works order free text parsed; unknown numbers checked for transpositions |
 
 ## Useful queries
 

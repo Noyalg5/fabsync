@@ -1,0 +1,36 @@
+# Master data matching configuration. All data is synthetic.
+# The match stage reads this file; changing a threshold here changes the
+# review queue on the next `make run-all`.
+
+[thresholds]
+auto_accept = 95   # score >= this: accepted automatically
+review_floor = 80  # score >= this and < auto_accept: human review queue; below: never merged
+
+# Minutes a person needs per review item, used for the effort estimate in
+# docs/match-quality-report.md. Assumptions, not measurements.
+[effort_minutes]
+supplier = 4      # compare VAT number, address and bank details on the two records
+material = 6      # pull the mill certificate for the document and read the grade
+works_order = 5   # check the job pack and the supervisor's booking sheet
+job = 3           # confirm the job number with the contract manager
+
+[supplier]
+# Tokens removed before comparison: legal form carries no identity.
+legal_suffixes = ["LTD", "LIMITED", "PLC", "CO", "COMPANY", "LLP", "UK"]
+
+# Abbreviations expanded before blocking and scoring. Standard name
+# standardisation: without it "NTH HOLLOW SECT" lands in a different block
+# from "NORTHERN HOLLOW SECTIONS" and is never compared.
+[supplier.abbreviations]
+NTH = "NORTHERN"
+STH = "SOUTHERN"
+SECT = "SECTIONS"
+GALV = "GALVANISING"
+GALVANIZERS = "GALVANISERS"
+SVCS = "SERVICES"
+SERV = "SERVICES"
+INDS = "INDUSTRIES"
+
+[material]
+stock_bar_length_m = 12.0  # length assumed when stock counts sections in EA
+mass_tolerance = 0.02      # observed kg/m differing from reference by more than this is flagged
