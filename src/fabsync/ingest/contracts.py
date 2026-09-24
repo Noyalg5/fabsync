@@ -85,4 +85,8 @@ RULES: dict[str, str] = {
     "MA-03": "Supplier names fuzzy matched within blocks: >=95 auto-accept, 80-95 review queue, <80 never merged",
     "MA-04": "Job crosswalk across MRPII job_no, finance job_code and shop-floor free-text references",
     "MA-05": "Works order free text parsed to a Corvus wo_no; unknown numbers checked for transposition candidates",
+    "RC-01": "Three-way match: PO line to goods receipt to invoice, classified against configured tolerances",
+    "RC-02": "Job cost reconciliation: Corvus, finance and shop-floor views of each job side by side",
+    "RC-03": "Stock accuracy: book against counted quantity, valued at unit cost",
+    "RC-04": "Material traceability: receipts allocated first-in first-out to BOM lines, chain checked to despatch",
 }

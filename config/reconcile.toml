@@ -1,0 +1,24 @@
+# Reconciliation settings. All data is synthetic.
+
+as_of_date = "2026-08-31"   # extract date of the synthetic snapshot; in production, today
+labour_rate = 38.0          # standard labour rate, pounds per hour
+
+[three_way]
+qty_tolerance = 0.02        # received quantity may differ from ordered by this share
+price_tolerance_pct = 0.05  # invoice may differ from expected by the greater of this share...
+price_tolerance_abs = 50.0  # ...or this many pounds
+receipt_grace_days = 5      # a PO is not overdue for receipt until this many days after its promised date
+invoice_grace_days = 30     # a receipt is not overdue for invoice until this many days after receipt
+# Nominal codes where spend without a purchase order is permitted (overheads).
+# Every other invoice without a PO is reported as "invoice with no PO".
+po_exempt_nominals = ["7000"]
+ageing_buckets = [30, 60, 90, 180]   # days; the last bucket is "over 180"
+
+[stock]
+accuracy_target = 0.95      # share of counted lines that must agree with the book
+line_tolerance = 0.0        # a line agrees if |counted - book| <= tolerance x book
+top_offenders = 20
+
+[traceability]
+receipt_after_finish_days = 0   # a receipt can supply a works order only if received by its planned finish
+despatch_window_days = 7        # a delivery note links to a works order if despatched within this many days of its finish

@@ -2,6 +2,36 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 5: Reconciliation engines (2026-09-25)
+
+**Done**
+- `src/fabsync/reconcile/`: four engines, each returning rows, a summary, an exposure figure and
+  headline figures. `make reconcile` publishes them to the `recon` schema and chains into
+  `run-all`. Settings are in `config/reconcile.toml`.
+- **No unexplainable figures:** all 45 headlines are stored with their value SQL and rows SQL. The
+  pipeline recomputes each from its rows before committing and refuses to publish otherwise. The
+  Streamlit page Reconciliation drills from headline to rows to raw source line.
+- **Three-way match:** £4.32m at risk. That is £3.41m of invoices with no PO (subcontract,
+  galvanising, paint, erection and similar), £428k received but not invoiced, £304k ordered but not
+  received, £116k in quantity variances and £59k in price variances. Ageing uses 0-30, 31-60,
+  61-90, 91-180 and over-180-day buckets.
+- **Job cost:** £1.74m gross unexplained gap across 169 jobs, ranked. Of the £1.54m gross material
+  gap, £1.43m is steel charged to the wrong job. It cancels out across jobs, and the invoices
+  reconcile to finance to the penny. The labour gap flags exactly the 30 seeded jobs. Finance cost
+  on jobs Corvus does not hold is £236k.
+- **Stock accuracy:** 89.6% against the 95% target. 8 of 20 site and section-type groups miss it.
+  The 11 offending lines total £15.3k.
+- **Traceability:** 68.7% coverage by weight. 148 despatched jobs for 38 customers carry steel
+  without a full chain, 1,103 tonnes in all. Chains break at: heat number missing (651 lines),
+  certificate missing (458), grade unconfirmed on receipt (656), no receipt on record (74), and no
+  delivery note (21). Corvus has no issue records, so the issue link is reconstructed and labelled
+  as such.
+- 20 new tests; 116 in total.
+
+**Next**
+- Mission 6: management reporting, including KPIs such as OTIF, WIP, NCR cost, tonnage and margin,
+  on the reconciled data.
+
 ## Mission 4: Data quality engine (2026-09-24)
 
 **Done**

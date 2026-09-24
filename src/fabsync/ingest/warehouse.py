@@ -146,7 +146,7 @@ def now() -> datetime:
 
 
 def rule_layer(rule_id: str) -> str:
-    return {"RAW": "raw", "ST": "staging", "CO": "core", "MA": "match"}[rule_id.split("-")[0]]
+    return {"RAW": "raw", "ST": "staging", "CO": "core", "MA": "match", "RC": "reconcile"}[rule_id.split("-")[0]]
 
 
 def create_warehouse(con: duckdb.DuckDBPyConnection, sources: list[SourceContract]) -> None:

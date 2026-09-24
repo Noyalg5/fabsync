@@ -1,9 +1,6 @@
-"""Command-line entry point for the reconcile stage. Logic to follow in a later mission."""
+"""Command-line entry point: ``python -m fabsync.reconcile`` runs the four reconciliation engines."""
 
-
-def main() -> None:
-    raise SystemExit("fabsync.reconcile: not yet implemented")
-
+from fabsync.reconcile.pipeline import main
 
 if __name__ == "__main__":
     main()

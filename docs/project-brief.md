@@ -48,17 +48,17 @@ source of project context is this file.
 | `src/fabsync/ingest/` | Synthetic generator; per-system contracts (`corvus_mrp.py`, `finance.py`, `shop_floor.py`); raw, staging, core, profiling; `pipeline.py` orchestrates |
 | `src/fabsync/match/` | Matchers for materials, suppliers, jobs, works orders; `pipeline.py` orchestrates, `report.py` writes the quality report |
 | `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
-| `src/fabsync/reconcile/` | Golden records with source lineage |
+| `src/fabsync/reconcile/` | Four reconciliation engines (three-way match, job cost, stock accuracy, material traceability); `pipeline.py` publishes and verifies |
 | `src/fabsync/kpi/` | Management KPIs |
 | `app/` | Streamlit demonstrator |
-| `config/` | `dq_rules.yaml` the data quality rules; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
+| `config/` | `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
-| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md` and `dq-scorecard.md` |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md` and `reconciliation-report.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `quality`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `run-all`, `app`, `pack`, `test`, `clean`.
 
 ## The three source systems
 
@@ -199,6 +199,30 @@ refuses a rule file that breaks the schema.
 - **Headline index:** DQI = 100 × Σ(weight × min(1, pass rate / threshold)) / Σ weight. Severity
   weights are critical 8, high 4, medium 2, low 1.
 - **Owning roles:** Purchasing Manager, Production Controller, Finance Manager, Quality Manager.
+
+## Reconciliation
+
+`make reconcile` rebuilds the `recon` schema in one transaction. Each engine returns a row-level
+result set, a summary, an exposure figure and headline figures.
+
+- **Headline figures:** `recon.headline` stores each figure with the SQL that produces it and the
+  SQL that lists its rows. The pipeline recomputes every figure from its rows and refuses to
+  publish if any disagrees, so no figure is unexplainable. Every row carries its source file and
+  line.
+- **Three-way match:** `recon.three_way_lines` puts every PO line in one category: matched,
+  quantity variance, price variance, missing GRN, missing invoice, or not yet due. Invoices on
+  non-exempt nominals with no PO are a separate category. Each line carries its value at risk,
+  age and reason.
+- **Job cost:** `recon.job_cost` shows the Corvus, finance and shop-floor views side by side, with
+  the gap ranked. `recon.job_cost_detail` holds every contributing row, and `recon.job_material`
+  explains the material gap by material. Most of the material gap is steel charged to the wrong
+  job.
+- **Stock accuracy:** `recon.stock_lines` and `recon.stock_summary` by site and section type,
+  against the 95% target.
+- **Traceability:** Corvus holds no material issues, so receipts are allocated to BOM lines
+  first-in first-out (`recon.trace_allocations`). `recon.trace_lines` records where each chain
+  breaks. `recon.trace_jobs` and `recon.trace_customers` show the EN 1090 exposure.
+- **Drill-down:** the Streamlit page Reconciliation goes from headline to rows to source line.
 
 ## Naming and style
 

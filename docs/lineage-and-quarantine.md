@@ -55,6 +55,10 @@ that fails leaves the flow at that rule, so the rows out of one step are the row
 | MA-03 | Supplier fuzzy match: 95+ auto, 80 to 95 review, under 80 never merged |
 | MA-04 | Job crosswalk across Corvus, finance and shop floor |
 | MA-05 | Works order free text parsed; unknown numbers checked for transpositions |
+| RC-01 | Three-way match classified against configured tolerances |
+| RC-02 | Job cost: Corvus, finance and shop-floor views side by side |
+| RC-03 | Stock accuracy: book against count, valued |
+| RC-04 | Traceability: receipts allocated first-in first-out, chain checked to despatch |
 
 ## Useful queries
 
