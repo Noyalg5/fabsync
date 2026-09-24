@@ -50,8 +50,8 @@ source of project context is this file.
 | `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
 | `src/fabsync/reconcile/` | Four reconciliation engines (three-way match, job cost, stock accuracy, material traceability); `pipeline.py` publishes and verifies |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
-| `app/` | Streamlit demonstrator |
-| `config/` | `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
+| `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
+| `config/` | `roadmap.yaml` phases, risks, training, data domains; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
 | `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md` |
@@ -222,7 +222,7 @@ result set, a summary, an exposure figure and headline figures.
 - **Traceability:** Corvus holds no material issues, so receipts are allocated to BOM lines
   first-in first-out (`recon.trace_allocations`). `recon.trace_lines` records where each chain
   breaks. `recon.trace_jobs` and `recon.trace_customers` show the EN 1090 exposure.
-- **Drill-down:** the Streamlit page Reconciliation goes from headline to rows to source line.
+- **Drill-down:** the Reconciliation page in the app goes from headline to rows to source line.
 
 ## KPIs
 
@@ -239,6 +239,25 @@ coverage, WIP and ageing, capacity utilisation, and NCR rate with cost of qualit
   table, ready for the PDF pack) and `docs/kpi-report.md`, where every figure appears with its
   caveat.
 - **Rule:** never present a KPI without its caveat.
+
+## The app
+
+`make app` runs `app/app.py`. Shared building blocks are in `src/fabsync/ui.py`: data access,
+formatting, charts and clickable figures.
+
+- **Page order tells the story:** Overview, Source systems, Data quality, Master data,
+  Reconciliation, Performance, Governance, Roadmap.
+- **Banner:** "Demonstration prototype. All data is synthetic." shows on every page.
+- **Clickable figures:** every headline number is a button that opens the rows behind it, and any
+  row with a source file and line traces to the line as received.
+- **Design:** neutral, with one accent colour (`#0F5C7A`). Each source system has a fixed colour
+  everywhere: Corvus MRP blue, finance ochre, shop floor green. No gradients, emoji, pie charts,
+  3D or dual axes. Charts are labelled directly instead of with legends, axes carry units, and
+  money shows as £ with thousands separators.
+- **Offline:** `.streamlit/config.toml` turns off usage statistics and binds to localhost, which
+  also stops the startup public-IP lookup. Queries are cached until the warehouse changes.
+- **Tests:** `tests/test_app.py` checks page order, the banner, load time, the chart rules, system
+  colours and click-through.
 
 ## Naming and style
 

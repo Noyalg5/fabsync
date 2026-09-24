@@ -1,0 +1,21 @@
+# Streamlit settings for the FabSync demonstrator. The app makes no network calls.
+[browser]
+gatherUsageStats = false
+
+[server]
+runOnSave = false
+fileWatcherType = "none"
+# Bind to this machine only. This also stops Streamlit looking up the public IP address
+# at startup, which would be a network call.
+address = "localhost"
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#0F5C7A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F7FA"
+textColor = "#1F2933"
+font = "sans serif"

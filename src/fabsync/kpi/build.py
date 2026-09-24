@@ -33,7 +33,7 @@ DICTIONARY_PATH = Path("docs/data-dictionary.md")
 REPORT_PATH = Path("docs/kpi-report.md")
 ROLES = ("Purchasing Manager", "Production Controller", "Finance Manager", "Quality Manager")
 REQUIRED = ("id", "name", "definition", "formula", "sources", "owner", "refresh", "caveat", "unit", "direction",
-            "headline", "views")
+            "headline", "rows", "views")
 DIRECTIONS = ("higher", "lower", "abs_lower", "band", "none")
 MIN_CAVEAT_WORDS = 20
 
@@ -161,7 +161,9 @@ def build_marts(warehouse: Path = WAREHOUSE_PATH, kpi_path: Path = KPI_PATH,
             rows.append({"kpi_id": k["id"], "name": k["name"], "value": value, "unit": k["unit"],
                          "target": target_text(k), "status": status(k, value), "owner": k["owner"],
                          "secondary_label": sec["label"] if sec else None, "secondary_value": sec_value,
-                         "secondary_unit": sec["unit"] if sec else None, "headline_sql": k["headline"]})
+                         "secondary_unit": sec["unit"] if sec else None, "headline_sql": k["headline"],
+                         "rows_sql": k["rows"], "rows": int(con.execute(f"SELECT count(*) FROM ({k['rows']})")
+                                                            .fetchone()[0])})
             defs.append({"kpi_id": k["id"], "name": k["name"], "definition": k["definition"],
                          "formula": k["formula"], "sources": k["sources"], "owner": k["owner"],
                          "refresh": k["refresh"], "caveat": " ".join(str(k["caveat"]).split()),

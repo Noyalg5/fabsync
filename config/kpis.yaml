@@ -5,6 +5,7 @@
 # listed here gets its description attached as a comment in the warehouse.
 #
 # headline: one SQL expression returning the single figure for the scorecard.
+# rows: the query listing the records behind that figure, for drill-down.
 # direction: higher | lower | band (target_low to target_high) | none
 
 parameters:
@@ -32,6 +33,7 @@ kpis:
     target: 95
     direction: higher
     headline: SELECT round(100 * avg(CAST(otif AS INTEGER)), 1) FROM marts.otif_deliveries WHERE measurable
+    rows: SELECT * FROM marts.otif_deliveries WHERE measurable ORDER BY despatch_date
     views:
       marts.otif_deliveries: One row per delivery note with on-time, in-full and OTIF flags and the works order it is matched to.
       marts.otif_by_month: OTIF, on-time and in-full percentages by month of despatch.
@@ -50,6 +52,7 @@ kpis:
     target: 10
     direction: abs_lower
     headline: SELECT round(100 * (sum(actual_hours) - sum(planned_hours)) / sum(planned_hours), 1) FROM marts.labour_variance_by_works_order WHERE complete
+    rows: SELECT * FROM marts.labour_variance_by_works_order WHERE complete ORDER BY abs(variance_pct) DESC NULLS LAST
     views:
       marts.labour_variance_by_works_order: Planned against booked hours for every started works order.
       marts.labour_variance_by_job: Planned against booked hours on completed works orders, by job, largest variance first.
@@ -66,6 +69,7 @@ kpis:
     target: 85
     direction: higher
     headline: SELECT round(100 * sum(used_kg) / sum(bought_kg), 1) FROM marts.material_yield_lines
+    rows: SELECT * FROM marts.material_yield_lines ORDER BY offcut_m DESC
     views:
       marts.material_yield_lines: Cut yield for every BOM line of sections bought in stock bars.
       marts.material_yield_by_section_type: Cut yield, offcut waste and received-to-issued ratio by section type.
@@ -82,6 +86,7 @@ kpis:
     target: 95
     direction: higher
     headline: SELECT accuracy_pct FROM marts.stock_accuracy WHERE site_code = 'All sites'
+    rows: SELECT * FROM recon.stock_lines ORDER BY accurate, value_error DESC
     views:
       marts.stock_accuracy: Stock line accuracy and value error by site and for all sites, against target.
 
@@ -97,6 +102,7 @@ kpis:
     target: 5
     direction: lower
     headline: SELECT round(100 * sum(po_line_exceptions) / sum(po_lines_assessed), 1) FROM marts.three_way_exception_rate
+    rows: SELECT * FROM recon.three_way_lines WHERE category <> 'not yet due' ORDER BY value_at_risk DESC
     secondary:
       label: Value at risk
       unit: GBP
@@ -117,6 +123,7 @@ kpis:
     target: 100
     direction: higher
     headline: SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 1) FROM recon.trace_lines
+    rows: SELECT * FROM recon.trace_lines ORDER BY material_chain_complete, kg DESC
     views:
       marts.traceability_coverage: Traceability coverage by month and site, with despatched lines that are not traced.
 
@@ -132,6 +139,7 @@ kpis:
     target: null
     direction: none
     headline: SELECT round(sum(wip_value), 2) FROM marts.wip_works_orders
+    rows: SELECT * FROM marts.wip_works_orders ORDER BY age_days DESC
     secondary:
       label: Share of WIP over 90 days
       unit: percent
@@ -153,6 +161,7 @@ kpis:
     target_high: 95
     direction: band
     headline: SELECT round(100 * sum(booked_hours) / sum(available_hours) FILTER (WHERE booked_hours IS NOT NULL), 1) FROM marts.capacity_utilisation
+    rows: SELECT * FROM marts.capacity_utilisation ORDER BY week_commencing, site_code
     views:
       marts.capacity_utilisation: Booked against available hours by week and site, with the booking-sheet cross-check.
       marts.capacity_utilisation_by_site: Utilisation by site over the whole period.
@@ -169,6 +178,7 @@ kpis:
     target: 2
     direction: lower
     headline: SELECT round(100 * sum(ncr_cost) / sum(turnover), 2) FROM marts.quality_cost_by_month
+    rows: SELECT * FROM marts.quality_cost_by_month ORDER BY month
     secondary:
       label: NCRs per 100 tonnes despatched
       unit: count

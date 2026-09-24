@@ -2,6 +2,37 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 7: Streamlit app (2026-09-25)
+
+**Done**
+- `make app` runs `app/app.py`, with eight pages in story order: Overview, Source systems, Data
+  quality, Master data, Reconciliation, Performance, Governance, Roadmap. The earlier Home,
+  Lineage and Reconciliation pages were folded in. Lineage and quarantine is now a tab under
+  Governance.
+- `src/fabsync/ui.py` holds the shared design system: one accent, fixed source-system colours,
+  cached queries, £ formatting, directly labelled Altair charts, clickable headline figures that
+  open the rows behind them, and tracing from a row to its source line.
+- **Overview:** the problem in plain English, an inline SVG diagram of the three disconnected
+  systems, and eight clickable headline findings.
+- **Source systems:** each raw extract as received, with its conventions, profiling findings and
+  quarantined rows marked line by line.
+- **Governance:** the data dictionary, a live ownership matrix, the rule set, and lineage and
+  quarantine.
+- **Roadmap:** phases, risk register and training plan from the new `config/roadmap.yaml`, sized
+  by live figures. KPIs gained a `rows` query so their figures are clickable.
+- **Offline:** usage statistics are off, and the server binds to localhost. Without the binding,
+  Streamlit fetched the public IP address at startup.
+- **Speed:** every page renders in under 0.5 s warm; the first page is about 1 s cold.
+- 9 app tests replace the two old page tests; 138 tests in total.
+
+**Not verified**
+- No browser is available in this environment, so the visual layout, including the CSS for the
+  banner and the large clickable figures, has not been seen rendered. It has been checked only
+  through the test harness.
+
+**Next**
+- The PDF pack.
+
 ## Mission 6: KPI layer (2026-09-25)
 
 **Done**

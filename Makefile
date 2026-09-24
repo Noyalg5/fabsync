@@ -47,7 +47,7 @@ kpi: venv
 run-all: generate ingest match quality reconcile kpi
 
 app: venv
-	.venv/bin/streamlit run app/Home.py
+	.venv/bin/streamlit run app/app.py
 
 pack: run-all
 	mkdir -p $(EXPORT)

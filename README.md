@@ -16,7 +16,7 @@ make quality   # run the declared data quality rules; scorecard and exception qu
 make reconcile # three-way match, job cost, stock accuracy, material traceability
 make kpi       # build the documented KPI views; data dictionary and KPI report
 make run-all   # generate synthetic data, load the warehouse, run every stage
-make app       # open the Streamlit demonstrator
+make app       # open the demonstrator at http://localhost:8501 (runs offline)
 make test      # run the test suite
 ```
 

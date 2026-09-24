@@ -1,0 +1,147 @@
+# FabSync rollout roadmap, risk register, training plan and data ownership.
+# Written for the fictional fabricator in this demonstrator; all data behind it is synthetic.
+# Shared by the Streamlit app and the PDF pack.
+
+phases:
+  - phase: "0. Mobilise"
+    timing: Weeks 0 to 2
+    goal: Agree who owns what, and fix the baseline so improvement can be measured.
+    work: Name the four data owners and a sponsor. Run profiling on the real extracts and compare with this demonstrator. Freeze the baseline data quality index and KPIs. Agree the steering group's monthly slot.
+    exit: Owners signed off; baseline scorecard and KPI pack issued.
+  - phase: "1. Stop the bleeding"
+    timing: Weeks 2 to 8
+    goal: Close the EN 1090 traceability gap and the purchasing controls that cost money now.
+    work: Quarantine stock whose heat number or certificate is missing and request duplicate certificates from the mills. Make heat number, certificate and grade mandatory at goods-in and on purchase orders. Require a purchase order for subcontract, galvanising, paint and plant spend. Clear three-way match exceptions older than 90 days.
+    exit: Every new receipt fully traceable; no new invoices without a purchase order outside overheads.
+  - phase: "2. Clean the master data"
+    timing: Weeks 6 to 14
+    goal: One supplier, one material code, one job number, everywhere.
+    work: Work through the matching review queue. Merge duplicate suppliers in Corvus and finance, and block the old codes. Retire material code variants and set the stocking unit on each material. Agree the job number crosswalk and close legacy finance job codes. Publish the golden records.
+    exit: Master data rules at threshold; review queue empty; golden records owned and published.
+  - phase: "3. Connect the systems"
+    timing: Months 3 to 6
+    goal: Stop the drift from coming back.
+    work: Automate nightly extracts from Corvus and finance into the warehouse. Replace booking spreadsheets with a structured form that only accepts real works orders and valid dates. Record material issues in Corvus from cutting lists. Charge steel to jobs from issues, not from the invoice.
+    exit: Quarantine rate below 0.1%; traceability coverage at 99% or more on new work; job cost gap explained each month.
+  - phase: "4. Run and improve"
+    timing: Month 6 onward
+    goal: Make data quality part of the monthly routine.
+    work: Monthly review of each owner's scorecard and exception queue. Monthly KPI pack to the management team, with caveats. Quarterly review of rules and thresholds. Use the clean data to decide on replacing the MRPII system.
+    exit: Data quality index trending up for three consecutive months.
+
+risks:
+  - id: R1
+    risk: Certificates for steel already on site cannot be recovered.
+    likelihood: High
+    impact: High
+    owner: Quality Manager
+    mitigation: Request duplicates from mills by heat number. Assess each job by execution class, and agree with the certification body and customer whether remedial testing is needed.
+  - id: R2
+    risk: Supervisors drift back to their own spreadsheets.
+    likelihood: Medium
+    impact: High
+    owner: Production Controller
+    mitigation: Keep the new booking form simpler than the spreadsheet. Show each supervisor their own data quality score weekly.
+  - id: R3
+    risk: Data owners have no time to clear review and exception queues.
+    likelihood: Medium
+    impact: Medium
+    owner: Finance Manager
+    mitigation: Ring-fence two hours a week per owner for eight weeks. The review queue is sized in hours, so the ask is specific.
+  - id: R4
+    risk: Merging supplier accounts causes a duplicate or misdirected payment.
+    likelihood: Low
+    impact: High
+    owner: Finance Manager
+    mitigation: Reconcile supplier statements first, freeze payment runs on accounts being merged, and require two signatures on bank detail changes.
+  - id: R5
+    risk: Restated job costs change reported margins on live contracts.
+    likelihood: Medium
+    impact: Medium
+    owner: Finance Manager
+    mitigation: Restate from a fixed date forward, and explain each movement with the job cost reconciliation drill-down.
+  - id: R6
+    risk: KPIs are read without their caveats and drive the wrong decision.
+    likelihood: Medium
+    impact: Medium
+    owner: Production Controller
+    mitigation: Every KPI in the pack carries its caveat, and the owner signs off the pack before it is issued.
+  - id: R7
+    risk: Real extracts are messier than this demonstrator suggests.
+    likelihood: High
+    impact: Medium
+    owner: Purchasing Manager
+    mitigation: Profile the real extracts in Phase 0, before committing to dates, and add rules for anything new.
+  - id: R8
+    risk: The Corvus vendor limits extract access or charges for it.
+    likelihood: Medium
+    impact: Medium
+    owner: Purchasing Manager
+    mitigation: Confirm export rights in the support contract in Phase 0; fall back to scheduled report exports.
+
+training:
+  - audience: Management team
+    content: Reading the KPI pack and the data quality index, including what each caveat means.
+    format: Workshop
+    duration: 90 minutes
+    when: Phase 0
+  - audience: Data owners (Purchasing, Production, Finance, Quality)
+    content: Ownership duties; working the exception and review queues in the app; tracing a figure to its source line.
+    format: Half-day session, then a monthly clinic
+    duration: 3.5 hours
+    when: Phase 1
+  - audience: Goods-in and stores
+    content: Recording heat number, certificate reference and grade on every receipt; what to do when a certificate is missing.
+    format: Toolbox talk at goods-in
+    duration: 45 minutes
+    when: Phase 1
+  - audience: Buyers
+    content: Ordering by full material code including grade; raising a purchase order for all subcontract and service spend.
+    format: Desk session
+    duration: 1 hour
+    when: Phase 1
+  - audience: Quality team
+    content: Using the traceability reconstruction and NCR costing to manage EN 1090 exposure.
+    format: Desk session
+    duration: 1 hour
+    when: Phase 1
+  - audience: Finance team
+    content: Clearing three-way match exceptions; charging steel to jobs from issues; the job cost reconciliation.
+    format: Desk session
+    duration: 2 hours
+    when: Phase 2
+  - audience: Shop-floor supervisors
+    content: The structured booking form, choosing works orders, and entering dates and hours.
+    format: Toolbox talk and floor walk
+    duration: 30 minutes
+    when: Phase 3
+
+ownership:
+  - domain: Material master
+    system_of_record: Corvus MRP
+    owner: Purchasing Manager
+    steward_task: Approve new material codes; retire variants; set the stocking unit.
+  - domain: Supplier master
+    system_of_record: Finance system (accounts), Corvus MRP (ordering codes)
+    owner: Finance Manager
+    steward_task: One account per supplier; bank detail changes under dual control; Corvus codes mapped to accounts.
+  - domain: Customers and jobs
+    system_of_record: Corvus MRP (job), Finance system (billing)
+    owner: Finance Manager
+    steward_task: Every job number mapped to its finance job code before the first invoice.
+  - domain: Works orders, routings and bookings
+    system_of_record: Corvus MRP
+    owner: Production Controller
+    steward_task: Works orders closed when despatched; bookings only against live works orders.
+  - domain: Goods receipts and traceability
+    system_of_record: Corvus MRP
+    owner: Quality Manager
+    steward_task: Heat number and certificate on every receipt; quarantine anything untraceable.
+  - domain: Stock
+    system_of_record: Corvus MRP
+    owner: Production Controller
+    steward_task: Cycle count every line at least quarterly; offcuts returned to stock with their heat number.
+  - domain: Non-conformance
+    system_of_record: Shop-floor NCR log
+    owner: Quality Manager
+    steward_task: Every NCR costed and closed within 60 days.
