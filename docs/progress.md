@@ -2,6 +2,39 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 2: Ingestion layer and warehouse (2026-09-24)
+
+**Done**
+- Schema contracts declared per system in `src/fabsync/ingest/corvus_mrp.py`, `finance.py` and
+  `shop_floor.py`: columns, types, required flags, date formats, domains, canonical patterns.
+- DuckDB warehouse with four schemas: `raw` (as received, all text, physical line numbers),
+  `staging` (typed via nine ordered rules), `core` (conformed and joined, left joins with matched
+  flags), `governance`.
+- Lineage: 163 steps per run in `governance.lineage`; each rule's rows in equals the previous rule's
+  rows out. Row-level lineage via `_source_file` and `_source_row` on every staging and core row.
+- Quarantine: 189 rows in `governance.quarantine` with rule, column and original values. That is
+  162 exact duplicates plus all 27 seeded entry errors, each under its expected rule.
+  `governance.table_balance` shows every file balances.
+- Profiling: `governance.profile_table`, `profile_column`, `profile_anomaly` and
+  `docs/profiling-report.md`, covering blank rates, distinct counts, declared versus inferred types,
+  format anomalies, duplicates and samples.
+- `make ingest` rebuilds from empty, generating raw data first if missing, and is idempotent. The
+  build goes to a temporary file that is swapped in only on success.
+- Streamlit page **Lineage and quarantine**: balance, rule chain per table, quarantine browser,
+  row trace across layers, rules and contracts.
+- `docs/lineage-and-quarantine.md` with the rule catalogue and example queries, each verified.
+- 37 tests pass.
+
+**Changed from mission 1**
+- The generator now seeds 27 hand-typed entry errors in the shop-floor files, such as `7,5` hours,
+  `31/02/2025` and `TBC` dates, blank works orders and reused booking ids. Without them the
+  quarantine would show only duplicates. They use a separate random stream, so mission 1 figures
+  are unchanged, and they are listed in `defects.json`.
+
+**Next**
+- Mission 3: matching across systems: materials (defect 1), suppliers (defect 2), job codes
+  (defect 3), with UoM normalisation (defect 4).
+
 ## Mission 1: Synthetic source generator (2026-09-24)
 
 **Done**

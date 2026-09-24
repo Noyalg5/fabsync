@@ -1,9 +1,6 @@
-"""Command-line entry point for the ingest stage. Logic to follow in a later mission."""
+"""Command-line entry point: ``python -m fabsync.ingest`` loads data/raw into the warehouse."""
 
-
-def main() -> None:
-    raise SystemExit("fabsync.ingest: not yet implemented")
-
+from fabsync.ingest.pipeline import main
 
 if __name__ == "__main__":
     main()

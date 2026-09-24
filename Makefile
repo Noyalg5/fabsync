@@ -7,7 +7,7 @@ EXPORT  := export
 
 help:
 	@echo "generate  - create synthetic source extracts in data/raw/"
-	@echo "ingest    - load raw extracts into the DuckDB warehouse"
+	@echo "ingest    - rebuild the DuckDB warehouse: raw, staging, core, lineage, quarantine, profiling"
 	@echo "run-all   - generate, ingest, match, quality, reconcile, kpi"
 	@echo "app       - launch the Streamlit demonstrator"
 	@echo "pack      - bundle the demo (warehouse, exports, docs) into export/"
@@ -22,7 +22,10 @@ venv:
 generate: venv
 	$(PY) -m fabsync.ingest.generate_sources
 
+# Ingest rebuilds the warehouse from empty on every run. It generates the raw
+# extracts first only if they are missing, so it also works from a clean clone.
 ingest: venv
+	test -f data/raw/defects.json || $(PY) -m fabsync.ingest.generate_sources
 	$(PY) -m fabsync.ingest
 
 run-all: generate ingest

@@ -198,7 +198,10 @@ def test_7_labour_variance(raw) -> None:
     wos = load(out, "corvus_mrp/works_orders.csv")
     wo_to_job = {int(r.wo_no): f"{r.job_no.split('-')[1]}{int(r.job_no.split('-')[2])}"
                  for r in wos.itertuples()}
+    injected = {e["key"] for e in manifest["defects"]["9_structural_noise"]["entry_errors"]
+                if e["file"] == "shop_floor/time_bookings.csv" and e["fault"] != "key_collision"}
     bookings = load(out, "shop_floor/time_bookings.csv").drop_duplicates("booking_id")
+    bookings = bookings[~bookings["booking_id"].isin(injected)]
     hours_by_job: dict[str, float] = {}
     for r in bookings.itertuples():
         job = wo_to_job.get(wo_digits(r.works_order))
@@ -250,11 +253,24 @@ def test_9_structural_noise(raw) -> None:
     assert bookings["works_order"].str.match(r"^\d+ \(rev B\)$").any()
 
 
+def test_9_entry_errors_present(raw) -> None:
+    out, manifest = raw
+    errors = manifest["defects"]["9_structural_noise"]["entry_errors"]
+    assert len(errors) >= 20
+    for e in errors:
+        rows = load(out, e["file"])
+        match = rows[rows[e["key_column"]] == e["key"]]
+        if e["fault"] == "key_collision":
+            assert len(match) >= 2 and match.drop_duplicates().shape[0] >= 2
+        else:
+            assert (match[e["column"]] == e["value"]).any(), e
+
+
 def test_10_orphan_works_orders(raw) -> None:
     out, manifest = raw
     orphans = set(manifest["defects"]["10_orphans"]["works_orders_in_bookings_not_in_mrp"])
     mrp = set(load(out, "corvus_mrp/works_orders.csv")["wo_no"].astype(int))
-    booked = {wo_digits(w) for w in load(out, "shop_floor/time_bookings.csv")["works_order"]}
+    booked = {wo_digits(w) for w in load(out, "shop_floor/time_bookings.csv")["works_order"]} - {None}
     assert len(orphans) == 6
     assert orphans.isdisjoint(mrp)
     assert orphans <= booked

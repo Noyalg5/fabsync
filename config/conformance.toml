@@ -1,0 +1,22 @@
+# Conformance reference used by the core layer. All data is synthetic.
+# Edit here, not in code: the core build reads this file and records the rule
+# (CO-02, CO-04) in the lineage table.
+
+[[site]]
+site_code = "WKF"
+site_name = "Wakefield"
+aliases = ["WKF", "Wakefield", "wakefield", "Wakefield works", "Wkfd"]
+
+[[site]]
+site_code = "TEE"
+site_name = "Teesside"
+aliases = ["TEE", "Teesside", "teesside", "Teesside works", "Tees"]
+
+[operation_aliases]
+SAW = ["Saw", "saw", "SAW", "Cutting", "sawing"]
+DRILL = ["Drill", "drilling", "DRILL"]
+FIT = ["Fit", "fit-up", "Fitting", "FIT", "Fiting"]
+WELD = ["Weld", "welding", "WELD", "Welding", "Weldng"]
+BLAST = ["Blast", "shot blast", "BLAST", "Blasting"]
+PAINT = ["Paint", "painting", "PAINT", "Painting"]
+LOAD = ["Load", "loading", "Despatch", "LOAD"]

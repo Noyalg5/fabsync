@@ -45,16 +45,16 @@ source of project context is this file.
 | Path | Purpose |
 | --- | --- |
 | `src/fabsync/generate/` | Synthetic source extracts for the three systems |
-| `src/fabsync/ingest/` | Load raw extracts into DuckDB, originals untouched |
+| `src/fabsync/ingest/` | Synthetic generator; per-system contracts (`corvus_mrp.py`, `finance.py`, `shop_floor.py`); raw, staging, core, profiling; `pipeline.py` orchestrates |
 | `src/fabsync/match/` | Entity matching across systems |
 | `src/fabsync/quality/` | Data quality rules and governance checks |
 | `src/fabsync/reconcile/` | Golden records with source lineage |
 | `src/fabsync/kpi/` | Management KPIs |
 | `app/` | Streamlit demonstrator |
-| `config/` | Rules, thresholds, mappings |
+| `config/` | Rules, thresholds, mappings; `conformance.toml` holds site and operation aliases |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
-| `data/warehouse/` | DuckDB file (not committed) |
-| `docs/` | This brief, progress log, design notes |
+| `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
@@ -136,6 +136,25 @@ detect them, and their tests should read the same manifest.
 | 8 | Stock accuracy, ~15% of lines | Corvus stock |
 | 9 | Structural noise | Duplicates, padding, mixed dates, numbers as text |
 | 10 | Orphan works orders | Shop-floor time bookings |
+
+## Warehouse, lineage and quarantine
+
+`make ingest` rebuilds the DuckDB warehouse from empty and is idempotent. Full detail, rule catalogue
+and example queries: `docs/lineage-and-quarantine.md`.
+
+- **Schemas:** `raw` (as received, all text), `staging` (typed), `core` (conformed and joined),
+  `governance` (lineage, quarantine, contracts, rules, profiling, balance, run log).
+- **Contracts** are declared per system in code, separately from the data, and materialised in
+  `governance.contract`.
+- **Lineage is mandatory.** Every transform writes a row to `governance.lineage`: source file,
+  rule, rows in, rows out, rows rejected, timestamp, run id. Every staging and core row carries
+  `_source_file` and `_source_row`.
+- **Quarantine is mandatory.** A row that fails a staging rule goes to `governance.quarantine` with
+  the rule, failing column and original values. Nothing is dropped silently or edited in place.
+  `governance.table_balance` proves lines in = staged + quarantined for every file.
+- **Core never gains or loses rows.** Joins are left joins with a matched flag. Matching of
+  materials, suppliers and customers belongs to the match stage, not core.
+- Rule ids (RAW-, ST-, CO-) are stable identifiers used in lineage, quarantine and tests.
 
 ## Naming and style
 

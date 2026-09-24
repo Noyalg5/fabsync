@@ -10,6 +10,7 @@ represented.
 
 ```sh
 make generate  # rebuild the synthetic source extracts in data/raw/
+make ingest    # rebuild the DuckDB warehouse with lineage, quarantine and profiling
 make run-all   # generate synthetic data, load the warehouse, run every stage
 make app       # open the Streamlit demonstrator
 make test      # run the test suite
@@ -21,3 +22,5 @@ Requires Python 3.11 or later. Runs entirely offline.
 
 - `docs/project-brief.md`: context, house rules, domain glossary
 - `docs/progress.md`: mission log
+- `docs/lineage-and-quarantine.md`: warehouse layers, rules and example queries
+- `docs/profiling-report.md`: profile of every source file as received

@@ -367,6 +367,7 @@ def fmt_fin(d: date | None) -> str:
 
 
 OPS_DATE_FORMATS = ["%d/%m/%Y", "%Y-%m-%d", "%d-%b-%y"]
+BOOKING_COLUMNS = ["booking_id", "operator", "works_order", "operation", "hours", "booking_date", "site"]
 
 
 def fmt_ops(rng: random.Random, d: date | None) -> str:
@@ -978,6 +979,78 @@ class SourceGenerator:
             rows.insert(idx + 1, list(rows[idx]))
         return n
 
+    def inject_entry_errors(self, booking_rows: list[list], dn_rows: list[list],
+                            ncr_rows: list[list]) -> list[dict]:
+        """Seed hand-typed values that no parser should accept.
+
+        Uses its own random stream so the rest of the output is unchanged by it.
+        Each fault is recorded with the file, the row key and the value typed so
+        tests can assert the staging layer quarantines exactly these rows.
+        """
+        rng = random.Random(self.seed * 7919 + 9)
+        faults: list[dict] = []
+        next_id = max(int(r[0]) for r in booking_rows) + 1
+
+        def new_booking(column: int, value: str, fault: str) -> None:
+            nonlocal next_id
+            template = list(rng.choice(booking_rows))
+            template[0] = next_id
+            template[column] = value
+            booking_rows.insert(rng.randrange(len(booking_rows)), template)
+            faults.append({"file": "shop_floor/time_bookings.csv", "key_column": "booking_id",
+                           "key": str(next_id), "column": BOOKING_COLUMNS[column], "value": value,
+                           "fault": fault})
+            next_id += 1
+
+        for value in ["7,5", "4hrs", "half day", "7.5.", "8 hrs", "3,25"]:
+            new_booking(4, value, "unparseable_number")
+        for value in ["31/02/2025", "TBC", "w/c 03/03", "2025-13-02", "30-Feb-25"]:
+            new_booking(5, value, "invalid_date")
+        for _ in range(4):
+            new_booking(2, "", "blank_required")
+        # Key collisions: a row copied and edited, so the booking id is reused
+        # with different hours. The edited copy sits straight after the original.
+        seen: set = set()
+        for _ in range(3):
+            idx = rng.randrange(len(booking_rows) - 1)
+            original = booking_rows[idx]
+            if original[0] in seen or not str(original[4]).strip():
+                continue
+            seen.add(original[0])
+            edited = list(original)
+            edited[4] = f"{float(str(original[4]).strip()) + rng.choice([1, 2, 3.5]):g}"
+            booking_rows.insert(idx + 1, edited)
+            faults.append({"file": "shop_floor/time_bookings.csv", "key_column": "booking_id",
+                           "key": str(original[0]), "column": "booking_id", "value": str(original[0]),
+                           "fault": "key_collision"})
+
+        def unique_rows(rows: list[list], column: int) -> list[list]:
+            counts: dict = defaultdict(int)
+            for r in rows:
+                counts[r[0]] += 1
+            return [r for r in rows if counts[r[0]] == 1 and str(r[column]).strip()]
+
+        for value in ["ASAP", "TBC", "end of week"]:
+            row = rng.choice(unique_rows(dn_rows, 4))
+            row[4] = value
+            faults.append({"file": "shop_floor/delivery_notes.csv", "key_column": "dn_no", "key": row[0],
+                           "column": "promised_date", "value": value, "fault": "invalid_date"})
+        for value in ["2.4t", "approx 3"]:
+            row = rng.choice(unique_rows(dn_rows, 5))
+            row[5] = value
+            faults.append({"file": "shop_floor/delivery_notes.csv", "key_column": "dn_no", "key": row[0],
+                           "column": "tonnage", "value": value, "fault": "unparseable_number"})
+        for value in ["tbc", "n/a", "see QA"]:
+            row = rng.choice(unique_rows(ncr_rows, 2))
+            row[5] = value
+            faults.append({"file": "shop_floor/ncr_log.csv", "key_column": "ncr_no", "key": row[0],
+                           "column": "cost_impact", "value": value, "fault": "unparseable_number"})
+        row = rng.choice(unique_rows(ncr_rows, 2))
+        row[2] = "?"
+        faults.append({"file": "shop_floor/ncr_log.csv", "key_column": "ncr_no", "key": row[0],
+                       "column": "raised_date", "value": "?", "fault": "invalid_date"})
+        return faults
+
     # ---- main ------------------------------------------------------------- #
 
     def run(self, out_dir: Path) -> dict:
@@ -1221,9 +1294,6 @@ class SourceGenerator:
                                  ops_hours(rng, b["hours"]), fmt_ops(rng, b["date"]),
                                  rng.choice(OPS_SITE_FORMS[b["site"]])])
         dup_bookings = self.duplicate_rows(booking_rows, 0.012)
-        self.write_csv(ops_dir / "time_bookings.csv", "Shop-floor spreadsheet",
-                       ["booking_id", "operator", "works_order", "operation", "hours", "booking_date",
-                        "site"], booking_rows)
 
         dn_rows = []
         dn_no = 7_200
@@ -1241,9 +1311,6 @@ class SourceGenerator:
                             f"{wo.tonnage:.2f}" if rng.random() > 0.03 else "",
                             rng.choice(VEHICLE_FORMS).format(reg=reg) if rng.random() > 0.05 else ""])
         dup_dns = self.duplicate_rows(dn_rows, 0.01)
-        self.write_csv(ops_dir / "delivery_notes.csv", "Shop-floor spreadsheet",
-                       ["dn_no", "job", "customer", "despatch_date", "promised_date", "tonnage", "vehicle"],
-                       dn_rows)
 
         ncr_rows = []
         ncr_pool = [wo for wo in wos if wo.actual_hours > 0]
@@ -1268,6 +1335,11 @@ class SourceGenerator:
                              cost_text, fmt_ops(rng, closed)])
         ncr_rows.sort(key=lambda r: r[0])
         dup_ncrs = self.duplicate_rows(ncr_rows, 0.016)
+        entry_errors = self.inject_entry_errors(booking_rows, dn_rows, ncr_rows)
+        self.write_csv(ops_dir / "time_bookings.csv", "Shop-floor spreadsheet", BOOKING_COLUMNS, booking_rows)
+        self.write_csv(ops_dir / "delivery_notes.csv", "Shop-floor spreadsheet",
+                       ["dn_no", "job", "customer", "despatch_date", "promised_date", "tonnage", "vehicle"],
+                       dn_rows)
         self.write_csv(ops_dir / "ncr_log.csv", "Shop-floor spreadsheet",
                        ["ncr_no", "works_order", "raised_date", "category", "description", "cost_impact",
                         "closed_date"], ncr_rows)
@@ -1357,6 +1429,8 @@ class SourceGenerator:
                                 "shop_floor/ncr_log.csv": "cost_impact mixes plain numbers, pound signs and blanks",
                                 "shop_floor/time_bookings.csv": "hours carry stray spaces and mixed precision"},
             "blank_cells": "shop_floor operator, operation, promised_date, tonnage, vehicle, closed_date",
+            "entry_errors": entry_errors,
+            "entry_error_count": len(entry_errors),
         }
         self.manifest["row_counts"] = dict(self.counts)
         self.manifest["volumes"] = {
@@ -1491,6 +1565,10 @@ def render_defects_md(m: dict) -> str:
         f"- Mixed date formats in shop-floor files: {', '.join(noise['mixed_date_formats']['shop_floor/*'])}",
         f"- Numeric fields stored as text: {noise['numeric_as_text']['finance/*']}",
         f"- Blank cells: {noise['blank_cells']}",
+        f"- Hand-typed values no parser should accept: {noise['entry_error_count']} "
+        "(unparseable hours, tonnage and costs such as `7,5` and `4hrs`; impossible or placeholder dates such "
+        "as `31/02/2025` and `TBC`; blank works orders; booking ids reused on an edited copy). Listed "
+        "row by row in `defects.json`; the staging layer must quarantine every one.",
         "",
         "### 10. Orphan works orders",
         "",

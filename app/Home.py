@@ -5,4 +5,5 @@ import streamlit as st
 st.set_page_config(page_title="FabSync", layout="wide")
 st.title("FabSync")
 st.caption("Systems integration, data governance and management reporting demonstrator. All data is synthetic.")
-st.info("Scaffold only. Pages will be added mission by mission.")
+st.markdown("Run `make ingest` to build the warehouse, then open **Lineage and quarantine** in the sidebar to "
+            "see where every source row went and why.")
