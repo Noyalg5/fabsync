@@ -358,7 +358,7 @@ File `shop_floor/weekly_capacity.csv`, 212 rows. Natural key: week_commencing, s
 | ---: | --- | --- | --- | ---: | ---: | ---: |
 | 1 | `week_commencing` | date | date | 0.0% | 179 | 1 |
 | 2 | `site` | text | text | 0.0% | 10 | 1 |
-| 3 | `available_hours` | decimal | decimal | 0.0% | 206 |  |
+| 3 | `available_hours` | decimal | decimal | 0.0% | 190 |  |
 | 4 | `booked_hours` | decimal | decimal | 3.8% | 200 |  |
 
 | Column | Anomaly | Values | Sample |

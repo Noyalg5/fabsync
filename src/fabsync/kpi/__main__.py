@@ -1,9 +1,6 @@
-"""Command-line entry point for the kpi stage. Logic to follow in a later mission."""
+"""Command-line entry point: ``python -m fabsync.kpi`` builds the KPI marts and the data dictionary."""
 
-
-def main() -> None:
-    raise SystemExit("fabsync.kpi: not yet implemented")
-
+from fabsync.kpi.build import main
 
 if __name__ == "__main__":
     main()

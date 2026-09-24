@@ -49,16 +49,16 @@ source of project context is this file.
 | `src/fabsync/match/` | Matchers for materials, suppliers, jobs, works orders; `pipeline.py` orchestrates, `report.py` writes the quality report |
 | `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
 | `src/fabsync/reconcile/` | Four reconciliation engines (three-way match, job cost, stock accuracy, material traceability); `pipeline.py` publishes and verifies |
-| `src/fabsync/kpi/` | Management KPIs |
+| `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator |
-| `config/` | `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
+| `config/` | `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
-| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md` and `reconciliation-report.md` |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `run-all`, `app`, `pack`, `test`, `clean`.
 
 ## The three source systems
 
@@ -223,6 +223,22 @@ result set, a summary, an exposure figure and headline figures.
   first-in first-out (`recon.trace_allocations`). `recon.trace_lines` records where each chain
   breaks. `recon.trace_jobs` and `recon.trace_customers` show the EN 1090 exposure.
 - **Drill-down:** the Streamlit page Reconciliation goes from headline to rows to source line.
+
+## KPIs
+
+`make kpi` rebuilds the `marts` schema from `src/fabsync/kpi/sql/` in one transaction. Nine KPIs:
+OTIF, labour variance, material yield, stock accuracy, three-way exception rate, traceability
+coverage, WIP and ageing, capacity utilisation, and NCR rate with cost of quality.
+
+- **Definitions:** every KPI is defined in `config/kpis.yaml` with name, one-sentence definition,
+  formula, sources, owner, refresh, target and caveat. The build refuses a KPI whose caveat is
+  missing or perfunctory.
+- **Documented views:** every view carries its description as a warehouse comment. The build fails
+  if a view is undocumented, or documented but not built.
+- **Outputs:** `marts.kpi_definition`, `marts.kpi_scorecard`, `docs/data-dictionary.md` (one
+  table, ready for the PDF pack) and `docs/kpi-report.md`, where every figure appears with its
+  caveat.
+- **Rule:** never present a KPI without its caveat.
 
 ## Naming and style
 

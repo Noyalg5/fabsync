@@ -3,7 +3,7 @@ PY      := .venv/bin/python
 PIP     := .venv/bin/pip
 EXPORT  := export
 
-.PHONY: help venv generate ingest match quality reconcile run-all app pack test clean
+.PHONY: help venv generate ingest match quality reconcile kpi run-all app pack test clean
 
 help:
 	@echo "generate  - create synthetic source extracts in data/raw/"
@@ -11,6 +11,7 @@ help:
 	@echo "match     - rebuild crosswalks, golden records and review queues; write the match quality report"
 	@echo "quality   - run the declared data quality rules; write the scorecard and exception queue"
 	@echo "reconcile - three-way match, job cost, stock accuracy, material traceability"
+	@echo "kpi       - build the documented KPI views in marts; write the data dictionary and KPI report"
 	@echo "run-all   - generate, ingest, match, quality, reconcile, kpi"
 	@echo "app       - launch the Streamlit demonstrator"
 	@echo "pack      - bundle the demo (warehouse, exports, docs) into export/"
@@ -40,8 +41,10 @@ quality: venv
 reconcile: venv
 	$(PY) -m fabsync.reconcile
 
-run-all: generate ingest match quality reconcile
+kpi: venv
 	$(PY) -m fabsync.kpi
+
+run-all: generate ingest match quality reconcile kpi
 
 app: venv
 	.venv/bin/streamlit run app/Home.py

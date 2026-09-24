@@ -46,7 +46,7 @@ BAR_LENGTH_M = 12.0  # stock bar length assumed when counting sections in EA
 # --------------------------------------------------------------------------- #
 
 SITES = [("WKF", "Wakefield"), ("TEE", "Teesside")]
-SITE_HEADCOUNT = {"WKF": 48, "TEE": 34}
+SITE_HEADCOUNT = {"WKF": 13, "TEE": 12}  # direct shop-floor staff; agency operators cover peaks
 OPS_SITE_FORMS = {
     "WKF": ["Wakefield", "wakefield", "WKF", "Wakefield works", "Wkfd"],
     "TEE": ["Teesside", "teesside", "TEE", "Teesside works", "Tees"],

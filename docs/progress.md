@@ -2,6 +2,46 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 6: KPI layer (2026-09-25)
+
+**Done**
+- `marts` schema: 24 documented objects built from `src/fabsync/kpi/sql/`. Each view's description
+  is stored as a warehouse comment, and the build fails if views and definitions disagree.
+- Nine KPIs defined in `config/kpis.yaml`, each with definition, formula, sources, owner, refresh,
+  target and a mandatory caveat of at least 20 words.
+- **Current values:**
+  - OTIF 16.7% against 95%
+  - labour variance +7.4% against ±10%
+  - cut yield 76.2% against 85%
+  - stock accuracy 89.6% against 95%
+  - three-way exception rate 53.8% against 5%, with £4.32m at risk
+  - traceability 68.7% against 100%
+  - WIP £714k, 55% of it over 90 days
+  - capacity utilisation 86.1% against a 75 to 95% band
+  - cost of quality 1.3% of turnover against 2%, with 7.2 NCRs per 100 tonnes
+- `docs/data-dictionary.md` (one table ready for the PDF pack) and `docs/kpi-report.md`, where
+  every figure appears with its caveat.
+- `make kpi` added. `make run-all` now runs end to end from a clean tree.
+- 16 new tests; 132 in total. They show each KPI reproduces from source or from the
+  reconciliation, and that a KPI without a caveat is refused.
+
+**Changed from earlier missions**
+- **Generator headcount recalibrated** from 48 and 34 to 13 and 12 direct staff. The old figures
+  implied 26% utilisation, meaning three quarters of the workforce idle. Only available hours in
+  the weekly capacity sheet change; every earlier report is unchanged except one distinct count
+  in the profiling report.
+
+**Known calibration points to review**
+- **OTIF (16.7%)** is what the mission 1 generator implies. Delivery-note promised dates equal the
+  internal planned finish and most works orders slip. A real customer promise usually carries a
+  buffer. Changing it would shift labour and booking figures across every mission, so it is
+  flagged rather than changed.
+- **Three-way exception rate (53.8%)** is driven by the generator short-delivering about half of
+  all orders by 2 to 10%, and by a strict 2% quantity tolerance.
+
+**Next**
+- The Streamlit management views and the PDF pack.
+
 ## Mission 5: Reconciliation engines (2026-09-25)
 
 **Done**
