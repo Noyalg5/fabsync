@@ -3,7 +3,7 @@ PY      := .venv/bin/python
 PIP     := .venv/bin/pip
 EXPORT  := export
 
-.PHONY: help venv generate ingest match quality reconcile kpi run-all app pack test clean
+.PHONY: help venv generate ingest match quality reconcile kpi diagrams run-all app pack test clean
 
 help:
 	@echo "generate  - create synthetic source extracts in data/raw/"
@@ -12,6 +12,7 @@ help:
 	@echo "quality   - run the declared data quality rules; write the scorecard and exception queue"
 	@echo "reconcile - three-way match, job cost, stock accuracy, material traceability"
 	@echo "kpi       - build the documented KPI views in marts; write the data dictionary and KPI report"
+	@echo "diagrams  - fill the design diagrams with measured figures; render SVG and PNG"
 	@echo "run-all   - generate, ingest, match, quality, reconcile, kpi"
 	@echo "app       - launch the Streamlit demonstrator"
 	@echo "pack      - bundle the demo (warehouse, exports, docs) into export/"
@@ -43,6 +44,11 @@ reconcile: venv
 
 kpi: venv
 	$(PY) -m fabsync.kpi
+
+# Documentation build step: fills the diagram templates with measured figures and renders SVG and PNG
+# with the Mermaid renderer (mmdc). Not part of run-all; rendered files are committed.
+diagrams: venv
+	$(PY) -m fabsync.design.render
 
 run-all: generate ingest match quality reconcile kpi
 

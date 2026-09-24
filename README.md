@@ -33,3 +33,6 @@ Requires Python 3.11 or later. Runs entirely offline.
 - `docs/reconciliation-report.md`: the four reconciliations, each figure with the query behind it
 - `docs/data-dictionary.md`: every KPI's definition, formula, sources, owner, refresh and caveat
 - `docs/kpi-report.md`: current KPI values, each with its caveat
+- `docs/process-maps.md`: AS-IS process maps and TO-BE architecture, with diagrams in `docs/diagrams/`
+- `docs/integration-design.md`: interfaces, systems of record, conflict-resolution rules
+- `docs/data-ownership.md`: ownership matrix and escalation route

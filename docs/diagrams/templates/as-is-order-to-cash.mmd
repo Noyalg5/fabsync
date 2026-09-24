@@ -1,0 +1,89 @@
+%% AS-IS order to cash. Demonstration prototype: all data is synthetic.
+%% Steps run top to bottom. Each box is a system boundary; a new box opens every time the work
+%% crosses into another system. Figures in the break points are measured by the FabSync
+%% reconciliation of the synthetic data.
+flowchart TB
+  subgraph CU1["Customer"]
+    C1["1. Order and delivery programme received"]
+  end
+  subgraph PA1["Paper and email"]
+    P1["2. Contract review; promised dates agreed"]
+  end
+  subgraph CO1["Corvus MRP"]
+    K1["3. Job opened as J-24-0871"]
+  end
+  subgraph FI1["Finance system"]
+    F1["4. Job code set up as 24871"]
+  end
+  subgraph PA2["Paper"]
+    P2["5. Fabrication drawings and material schedules"]
+  end
+  subgraph CO2["Corvus MRP"]
+    K2["6. BOM keyed from the material schedules"]
+    K3["7. Works orders released; traveller printed"]
+  end
+  subgraph SH1["Shop-floor spreadsheets"]
+    S1[/"8. Operator booking sheet"/]
+    S2[/"9. Weekly capacity sheet"/]
+  end
+  subgraph FI2["Finance system"]
+    F2["10. Payroll hours allocated to jobs"]
+  end
+  subgraph SH2["Shop-floor spreadsheets"]
+    S3[/"11. NCR log"/]
+    S4[/"12. Delivery note sheet"/]
+  end
+  subgraph FI3["Finance system"]
+    F3["13. Sales invoice or application for payment"]
+    F4["14. Job margin and WIP reported"]
+  end
+  subgraph CU2["Customer"]
+    C2["15. Customer pays; retention held"]
+  end
+
+  C1 -- "paper handover" --> P1
+  P1 -- "manual re-key" --> K1
+  K1 -- "manual re-key" --> F1
+  F1 -- "paper handover" --> P2
+  P2 -- "manual re-key" --> K2
+  K2 --> K3
+  K3 -- "works order typed by hand" --> S1
+  S1 -- "totals re-keyed" --> S2
+  S2 -- "timesheets re-keyed" --> F2
+  F2 -- "meanwhile on the shop floor" --> S3
+  S3 --> S4
+  S4 -- "manual re-key" --> F3
+  F3 --> F4
+  F3 -- "invoice sent" --> C2
+
+  B1{{"Job number re-keyed in another format<br/>{{job_finance_only_codes}} finance job codes have no Corvus job<br/>{{job_finance_only_cost}} of cost with no production record"}}
+  B2{{"Works order typed by hand<br/>{{orphan_wos}} works orders that do not exist; {{unallocated_hours}} booked to them<br/>{{shopfloor_quarantined}} shop-floor rows unreadable or duplicated"}}
+  B3{{"Labour allocated apart from bookings<br/>{{labour_gap}} gap summed over jobs<br/>{{labour_gap_jobs}} jobs out by more than 15%"}}
+  B5{{"NCR cost left blank<br/>{{ncr_uncosted}} of {{ncr_total}} NCRs uncosted<br/>Cost of quality understated"}}
+  B4{{"No works order, heat number or promised date on the note<br/>OTIF {{otif}}; {{promised_missing}} notes with no promised date<br/>{{trace_exposed_tonnes}} despatched without full traceability"}}
+  B6{{"Invoices raised on unmapped job codes<br/>{{sales_unmapped_count}} invoices worth {{sales_unmapped_value}}"}}
+  B7{{"Steel charged to one job, issued to others; works orders left open<br/>{{material_misallocated}} of material cost on the wrong job<br/>WIP {{wip_value}}, {{wip_over_90}} of it over 90 days"}}
+
+  F1 -.- B1
+  S1 -.- B2
+  F2 -.- B3
+  S3 -.- B5
+  S4 -.- B4
+  F3 -.- B6
+  F4 -.- B7
+
+  classDef brk fill:#E8F1F5,stroke:#0F5C7A,stroke-width:2px,color:#1F2933
+  classDef sheet fill:#FFFFFF,stroke:#4F8A55,stroke-width:2px
+  class B1,B2,B3,B4,B5,B6,B7 brk
+  class S1,S2,S3,S4 sheet
+  style CO1 stroke:#3B6EA8,stroke-width:3px
+  style CO2 stroke:#3B6EA8,stroke-width:3px
+  style FI1 stroke:#B07A2A,stroke-width:3px
+  style FI2 stroke:#B07A2A,stroke-width:3px
+  style FI3 stroke:#B07A2A,stroke-width:3px
+  style SH1 stroke:#4F8A55,stroke-width:3px
+  style SH2 stroke:#4F8A55,stroke-width:3px
+  style PA1 stroke:#7B8794,stroke-dasharray:4 3
+  style PA2 stroke:#7B8794,stroke-dasharray:4 3
+  style CU1 stroke:#7B8794,stroke-dasharray:4 3
+  style CU2 stroke:#7B8794,stroke-dasharray:4 3

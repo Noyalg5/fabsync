@@ -1,0 +1,56 @@
+%% TO-BE architecture. Demonstration prototype: all data is synthetic.
+%% Read top to bottom: where data is entered, how it is collected and checked, the single
+%% version of each record, the warehouse, reporting, and the people who act on it.
+flowchart TB
+  subgraph ENTRY["Where data is entered"]
+    CORVUS["Corvus MRP: retained, streamlined<br/>Works orders, BOMs, stock, purchasing<br/>Grade, heat number and certificate compulsory<br/>Material issues recorded"]
+    FINANCE["Finance system: retained<br/>Ledgers, invoicing, payments<br/>Steel cost charged from Corvus issues<br/>Purchase order needed outside overheads"]
+    FORMS["Shop-floor forms: new<br/>Bookings, despatches, NCRs, capacity<br/>Only live works orders and real dates accepted"]
+  end
+  INT["Integration layer: new<br/>Collects every extract and form entry<br/>Checks each record against its agreed layout<br/>Quarantines what fails; records lineage"]
+  MDS["Master data service: new<br/>One golden record each for materials, suppliers,<br/>customers and jobs, works orders<br/>Crosswalks and the review queue"]
+  WH["Data warehouse: new<br/>Raw, staging, core, governance,<br/>reconciliation and KPI layers"]
+  REP["Reporting: new<br/>Monthly KPI pack with caveats<br/>Data quality scorecard; exception queues"]
+  OWN["Data owners<br/>Purchasing, Production, Finance, Quality"]
+
+  CORVUS -- "nightly" --> INT
+  FINANCE -- "nightly" --> INT
+  FORMS -- "as entered" --> INT
+  INT -- "match and look up" --> MDS
+  INT -- "checked data" --> WH
+  MDS -- "golden records" --> WH
+  WH --> REP
+  REP -- "exceptions and review items" --> OWN
+  OWN -- "decisions" --> MDS
+  MDS -. "approved codes, accounts and pick lists sent back" .-> ENTRY
+
+  subgraph RETIRED["Retired"]
+    direction TB
+    R1["Operator booking, delivery note,<br/>NCR and capacity spreadsheets<br/>(replaced by the shop-floor forms)"]
+    R2["Re-keying job codes into finance<br/>(replaced by the job crosswalk)"]
+    R3["Duplicate supplier accounts and<br/>material code variants<br/>(merged and blocked)"]
+    R4["Checking order, receipt and invoice by eye<br/>(replaced by the reconciliation)"]
+  end
+
+  OWN ~~~ RETIRED
+  RETIRED ~~~ KEY
+
+  subgraph KEY["Key"]
+    direction TB
+    KS["Stays, streamlined"]
+    KN["New"]
+    KR["Retired"]
+  end
+
+  classDef stays fill:#FFFFFF,stroke:#52606D,stroke-width:2px,color:#1F2933
+  classDef new fill:#E8F1F5,stroke:#0F5C7A,stroke-width:2px,color:#1F2933
+  classDef retired fill:#FFFFFF,stroke:#9AA5B1,stroke-width:1px,stroke-dasharray:4 3,color:#7B8794
+  class CORVUS,FINANCE,KS,OWN stays
+  class FORMS,INT,MDS,WH,REP,KN new
+  class R1,R2,R3,R4,KR retired
+  style CORVUS stroke:#3B6EA8,stroke-width:3px
+  style FINANCE stroke:#B07A2A,stroke-width:3px
+  style FORMS stroke:#4F8A55,stroke-width:3px
+  style RETIRED stroke:#9AA5B1,stroke-dasharray:4 3
+  style KEY stroke:#CBD2D9
+  style ENTRY stroke:#CBD2D9

@@ -2,6 +2,35 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 8: Design documentation (2026-09-25)
+
+**Done**
+- **Diagrams:** three Mermaid diagrams in `docs/diagrams/`, rendered to SVG and PNG. They cover
+  AS-IS order to cash, with 15 steps and 7 break points, AS-IS procure to pay, with 13 steps and 8
+  break points, and the TO-BE architecture.
+- **Measured costs:** every break point quotes a figure filled from the warehouse by `make diagrams`,
+  never typed. Examples include £3.41m of spend with no PO, £1.43m of material on the wrong job,
+  1,103 tonnes despatched untraceable, and 20 finance job codes with no Corvus job.
+- **Layout:** the first render was unreadable. It had scattered boxes and crossing links. The maps
+  were redrawn top to bottom, with a new boundary box at every system crossing, and the target
+  architecture as layers. All three PNGs were inspected.
+- `docs/process-maps.md` (generated) explains both processes and the target in plain English, with
+  break-point tables carrying the same measured figures.
+- `docs/integration-design.md` covers 18 interfaces with source, target, direction, entity,
+  frequency, mechanism, owner and failure mode. It also sets out the system of record for 16
+  entities and 21 conflict-resolution rules, each with its winner and reason.
+- `docs/data-ownership.md` holds the entity-by-system matrix with owning role and steward, plus a
+  five-step escalation route with time limits and fast tracks for safety and payments.
+- 8 new tests; 146 in total.
+
+**Rendering dependency**
+- `make diagrams` needs Mermaid's command-line renderer and a headless browser. Both were already
+  in this machine's npm and Puppeteer caches, so rendering ran offline. On a clean machine they must
+  be installed once. The rendered files are committed, so the pack does not depend on them.
+
+**Next**
+- The PDF pack.
+
 ## Mission 7: Streamlit app (2026-09-25)
 
 **Done**

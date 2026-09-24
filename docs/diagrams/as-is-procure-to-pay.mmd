@@ -1,0 +1,75 @@
+%% AS-IS procure to pay. Demonstration prototype: all data is synthetic.
+%% Steps run top to bottom. Each box is a system boundary; a new box opens every time the work
+%% crosses into another system. Figures in the break points are measured by the FabSync
+%% reconciliation of the synthetic data.
+flowchart TB
+  subgraph CO1["Corvus MRP"]
+    K1["1. Material demand from BOMs"]
+  end
+  subgraph YA1["Yard"]
+    Y1[/"2. Stock count sheet"/]
+  end
+  subgraph CO2["Corvus MRP"]
+    K2["3. Buyer checks stock"]
+    K3["4. Purchase order raised: supplier name typed, material code picked"]
+  end
+  subgraph PA1["Paper, phone and email"]
+    X1["5. Order emailed to the stockholder"]
+    X2["6. Galvanising, paint and erection ordered by phone"]
+    X3["7. Steel arrives with delivery ticket and mill certificate"]
+  end
+  subgraph CO3["Corvus MRP"]
+    K4["8. Goods received note: heat number and certificate reference re-keyed"]
+    K5["9. Steel cut and issued to works orders: not recorded"]
+  end
+  subgraph PA2["Paper"]
+    X4["10. Supplier invoice arrives"]
+  end
+  subgraph FI1["Finance system"]
+    F1["11. Invoice keyed: account picked, PO reference and job code typed"]
+    F2["12. Order, receipt and invoice compared by eye"]
+    F3["13. Payment run"]
+  end
+
+  K1 -- "printed shortage list" --> Y1
+  Y1 -- "counts re-keyed" --> K2
+  K2 --> K3
+  K3 -- "manual re-key" --> X1
+  X1 --> X2
+  X2 --> X3
+  X3 -- "manual re-key" --> K4
+  K4 --> K5
+  K5 -- "supplier bills later" --> X4
+  X4 -- "manual re-key" --> F1
+  F1 --> F2
+  F2 --> F3
+
+  B3{{"Three units of measure for one material<br/>14 materials in EA, M and KG<br/>Stock accuracy 89.6%; £15k miscounted"}}
+  B1{{"Supplier name typed; no supplier master<br/>5 suppliers held under more than one record<br/>3 more likely, awaiting review"}}
+  B2{{"Material code picked freely<br/>18 materials written several ways<br/>Grade missing on 246 order and receipt lines"}}
+  B4{{"Services ordered with no purchase order<br/>726 invoices worth £3.41m"}}
+  B5{{"Heat number and certificate keyed from paper<br/>Missing on 178 receipts; traceability coverage 68.7%<br/>Short deliveries booked unchallenged: 377 lines, £116k"}}
+  B6{{"Issues not recorded<br/>Receipt-to-job link can only be inferred<br/>148 despatched jobs exposed; £14.47m of sales"}}
+  B8{{"Invoice re-keyed against the order<br/>48 price variances, £59k"}}
+  B9{{"Three-way match done by eye<br/>82 orders not received: £304k committed<br/>66 receipts not invoiced: £428k unaccrued<br/>1,076 exceptions older than 90 days"}}
+
+  Y1 -.- B3
+  K3 -.- B1
+  K3 -.- B2
+  X2 -.- B4
+  K4 -.- B5
+  K5 -.- B6
+  F1 -.- B8
+  F2 -.- B9
+
+  classDef brk fill:#E8F1F5,stroke:#0F5C7A,stroke-width:2px,color:#1F2933
+  classDef sheet fill:#FFFFFF,stroke:#4F8A55,stroke-width:2px
+  class B1,B2,B3,B4,B5,B6,B8,B9 brk
+  class Y1 sheet
+  style CO1 stroke:#3B6EA8,stroke-width:3px
+  style CO2 stroke:#3B6EA8,stroke-width:3px
+  style CO3 stroke:#3B6EA8,stroke-width:3px
+  style FI1 stroke:#B07A2A,stroke-width:3px
+  style YA1 stroke:#4F8A55,stroke-width:3px
+  style PA1 stroke:#7B8794,stroke-dasharray:4 3
+  style PA2 stroke:#7B8794,stroke-dasharray:4 3

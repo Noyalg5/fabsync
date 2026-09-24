@@ -49,6 +49,7 @@ source of project context is this file.
 | `src/fabsync/match/` | Matchers for materials, suppliers, jobs, works orders; `pipeline.py` orchestrates, `report.py` writes the quality report |
 | `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
 | `src/fabsync/reconcile/` | Four reconciliation engines (three-way match, job cost, stock accuracy, material traceability); `pipeline.py` publishes and verifies |
+| `src/fabsync/design/` | Diagram figures and renderer: fills `docs/diagrams/templates/` with measured figures |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
 | `config/` | `roadmap.yaml` phases, risks, training, data domains; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
@@ -58,7 +59,7 @@ source of project context is this file.
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `test`, `clean`.
 
 ## The three source systems
 
@@ -258,6 +259,20 @@ formatting, charts and clickable figures.
   also stops the startup public-IP lookup. Queries are cached until the warehouse changes.
 - **Tests:** `tests/test_app.py` checks page order, the banner, load time, the chart rules, system
   colours and click-through.
+
+## Design documentation
+
+- **Diagrams:** Mermaid sources in `docs/diagrams/`, rendered to `.svg` and `.png` beside them.
+  `make diagrams` fills `docs/diagrams/templates/` with figures measured from the warehouse, so
+  no cost on a diagram is typed by hand, then renders. The renderer (Mermaid's `mmdc`) is a
+  documentation build tool only, and the rendered files are committed.
+- **Diagrams drawn:** AS-IS order to cash, AS-IS procure to pay, and the TO-BE architecture. The
+  process maps run top to bottom. A new boundary box opens each time work crosses systems, and
+  break points sit beside their steps.
+- **Documents:** `docs/process-maps.md` (generated), `docs/integration-design.md` and
+  `docs/data-ownership.md`. They are written for a manufacturing manager, with every technical term
+  defined at first use.
+- **Tests:** `tests/test_design.py` fails if the committed diagrams no longer match the data.
 
 ## Naming and style
 
