@@ -1,9 +1,31 @@
-.tool-cache/
+# Virtual environments
 .venv/
+venv/
+
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Warehouse and generated data
 *.duckdb
 *.duckdb.wal
-.pytest_cache/
+data/warehouse/*
+!data/warehouse/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+export/*
+!export/.gitkeep
+
+# OS
 .DS_Store
-data/warehouse/
+Thumbs.db
+
+# Editor and tool-specific settings directories (any hidden directory at the root)
+/.*/
+!/.githooks/
+!/.github/

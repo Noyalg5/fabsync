@@ -1,4 +1,5 @@
 #!/bin/sh
-sed -i.bak -E '/^Co-Authored-By:.*(claude|anthropic)/Id; /Generated with/Id; /claude\.ai\/code/Id; /Claude-Session:/Id' "$1"
+# Strip attribution trailers so commit messages contain only subject and body.
+sed -i.bak -E '/^Co-Authored-By:/Id; /Generated with/Id; /-Session:/Id' "$1"
 rm -f "$1.bak"
 printf '%s\n' "$(cat "$1")" > "$1"
