@@ -141,4 +141,5 @@ route in `docs/data-ownership.md`.
 
 Not built in the prototype: the shop-floor forms, material issue recording in Corvus, and the
 return interfaces that send approved records back to Corvus and finance (IF-13 to IF-15). These
-are phase 2 and 3 work in the roadmap.
+are Phase 4 work in `docs/rollout-plan.md`. Until then, approved changes reach Corvus and finance as
+change lists keyed by the steward during the Phase 2 cleanse.

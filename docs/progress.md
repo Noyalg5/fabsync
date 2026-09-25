@@ -2,6 +2,45 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 9: Delivery planning (2026-09-26)
+
+**Done**
+- `docs/rollout-plan.md` sets out five phases over 18 months: discovery and baseline (months 1 to 3),
+  master data cleanse (3 to 8), read-only integration and reporting (5 to 10), process change and
+  write-back (9 to 15), and embed and handover (14 to 18). Each has an objective, activities, entry and
+  exit criteria written as checks, duration, dependencies and roles. There is a month-by-month timeline
+  with dual-running windows, and a management committee review in months 3, 6, 9, 12, 15 and 18, each
+  with its decisions and evidence.
+- `docs/risk-register.md` holds 23 risks across technical, data, people, commercial and compliance.
+  Each is scored 1 to 5 for likelihood and impact, inherent and residual, with a specific mitigation, an
+  owner and an early warning trigger. Heat maps show the scores before and after mitigation. The seven
+  risks that sink projects like this come first, each with a full write-up and the prototype's evidence.
+  Two stay high after mitigation: shop-floor resistance to time booking, and EN 1090 exposure during the
+  transition.
+- `docs/training-plan.md` covers the six roles asked for, plus goods-in and stores and the quality team,
+  because EN 1090 depends on them. Each role has what changes, what to learn, method, duration, a
+  competence check and timing.
+- `docs/benefits-case.md` is labelled ILLUSTRATIVE in its title, banner, closing line and above every
+  table. Baselines are measured on synthetic data; targets and pound values are modelled from nine
+  numbered assumptions. It only prices three benefits, about £94k a year in the central case. It lists
+  the large measured figures it deliberately does not claim, such as £3.41m of spend with no PO, and the
+  KPIs that will look worse before they look better.
+- `config/roadmap.yaml` now mirrors the plan, reviews, register and training. The Roadmap page shows
+  the new phases, the reviews table and the scored register. `docs/integration-design.md` now points to
+  Phase 4 for the forms and write-back.
+- `tests/test_planning.py`: 15 tests. They check structure, the timeline and quarterly reviews, that
+  scores multiply out, the heat maps, and config agreement. Every baseline, modelled figure and quoted
+  prototype figure is recomputed from a freshly built warehouse. Four planted errors were each caught.
+  161 tests in total.
+
+**Replaced**
+- The earlier roadmap in `config/roadmap.yaml` has been replaced: five phases from week 0 to month 6,
+  8 risks rated High, Medium or Low, and training by audience. Its content has been carried into the new
+  plan. The goods-in traceability control, for example, is now in Phase 1, before any system changes.
+
+**Next**
+- The PDF pack.
+
 ## Mission 8: Design documentation (2026-09-25)
 
 **Done**

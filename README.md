@@ -36,3 +36,7 @@ Requires Python 3.11 or later. Runs entirely offline.
 - `docs/process-maps.md`: AS-IS process maps and TO-BE architecture, with diagrams in `docs/diagrams/`
 - `docs/integration-design.md`: interfaces, systems of record, conflict-resolution rules
 - `docs/data-ownership.md`: ownership matrix and escalation route
+- `docs/rollout-plan.md`: five phases over 18 months, with entry and exit criteria and quarterly reviews
+- `docs/risk-register.md`: 23 scored risks, inherent and residual, with owners and early warnings
+- `docs/training-plan.md`: training by role, each with a competence check
+- `docs/benefits-case.md`: ILLUSTRATIVE benefits by phase; measured baselines, modelled targets

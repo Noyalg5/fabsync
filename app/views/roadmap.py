@@ -1,4 +1,5 @@
-"""Roadmap: phased rollout, risk register and training plan, sized by the live findings."""
+"""Roadmap: phased rollout, management committee reviews, risk register and training plan, sized by the live
+findings."""
 
 from pathlib import Path
 
@@ -28,10 +29,10 @@ if ui.has_table("recon", "headline") and ui.has_table("governance", "dq_exceptio
                     "SELECT * FROM core.v_match_review_queue ORDER BY domain", "rm_review", note="Phase 2")
     with c2:
         ui.headline("Receipts to recover certificates for", f"{count(certs_sql):,}", certs_sql, "rm_certs",
-                    note="Phase 1")
+                    note="Phases 1 and 2")
     with c3:
         ui.headline("Purchasing exceptions older than 90 days", f"{count(aged_sql):,}", aged_sql, "rm_ageing",
-                    note="Phase 1")
+                    note="Phase 2")
     with c4:
         ui.headline("Critical data quality exceptions", f"{count(critical_sql):,}", critical_sql, "rm_crit",
                     note="Phases 1 and 2")
@@ -39,10 +40,17 @@ else:
     st.info("Run `make run-all` to size the work from the data.")
 
 st.subheader("Phased rollout")
-ui.table(pd.DataFrame(roadmap["phases"]).rename(columns={"exit": "exit criteria"}))
+st.caption("18 months in five phases. Full plan: docs/rollout-plan.md.")
+ui.table(pd.DataFrame(roadmap["phases"]).rename(columns={"entry": "entry criteria", "exit": "exit criteria"}))
+
+st.subheader("Management committee reviews")
+ui.table(pd.DataFrame(roadmap["reviews"]))
 
 st.subheader("Risk register")
-ui.table(pd.DataFrame(roadmap["risks"]))
+st.caption("Likelihood and impact scored 1 to 5; scores are likelihood times impact, before and after mitigation. "
+           "Full register: docs/risk-register.md.")
+ui.table(pd.DataFrame(roadmap["risks"]).rename(columns=lambda c: c.replace("_", " ")))
 
 st.subheader("Training plan")
+st.caption("Full plan by role: docs/training-plan.md.")
 ui.table(pd.DataFrame(roadmap["training"]))

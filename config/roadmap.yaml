@@ -1,120 +1,477 @@
-# FabSync rollout roadmap, risk register, training plan and data ownership.
+# FabSync rollout: phases, management committee reviews, risk register, training plan and data ownership.
 # Written for the fictional fabricator in this demonstrator; all data behind it is synthetic.
-# Shared by the Streamlit app and the PDF pack.
+# Shared by the Streamlit app and the PDF pack. The phases, reviews, risks and training mirror
+# docs/rollout-plan.md, docs/risk-register.md and docs/training-plan.md; tests/test_planning.py keeps them in step.
 
 phases:
-  - phase: "0. Mobilise"
-    timing: Weeks 0 to 2
-    goal: Agree who owns what, and fix the baseline so improvement can be measured.
-    work: Name the four data owners and a sponsor. Run profiling on the real extracts and compare with this demonstrator. Freeze the baseline data quality index and KPIs. Agree the steering group's monthly slot.
-    exit: Owners signed off; baseline scorecard and KPI pack issued.
-  - phase: "1. Stop the bleeding"
-    timing: Weeks 2 to 8
-    goal: Close the EN 1090 traceability gap and the purchasing controls that cost money now.
-    work: Quarantine stock whose heat number or certificate is missing and request duplicate certificates from the mills. Make heat number, certificate and grade mandatory at goods-in and on purchase orders. Require a purchase order for subcontract, galvanising, paint and plant spend. Clear three-way match exceptions older than 90 days.
-    exit: Every new receipt fully traceable; no new invoices without a purchase order outside overheads.
-  - phase: "2. Clean the master data"
-    timing: Weeks 6 to 14
-    goal: One supplier, one material code, one job number, everywhere.
-    work: Work through the matching review queue. Merge duplicate suppliers in Corvus and finance, and block the old codes. Retire material code variants and set the stocking unit on each material. Agree the job number crosswalk and close legacy finance job codes. Publish the golden records.
-    exit: Master data rules at threshold; review queue empty; golden records owned and published.
-  - phase: "3. Connect the systems"
-    timing: Months 3 to 6
-    goal: Stop the drift from coming back.
-    work: Automate nightly extracts from Corvus and finance into the warehouse. Replace booking spreadsheets with a structured form that only accepts real works orders and valid dates. Record material issues in Corvus from cutting lists. Charge steel to jobs from issues, not from the invoice.
-    exit: Quarantine rate below 0.1%; traceability coverage at 99% or more on new work; job cost gap explained each month.
-  - phase: "4. Run and improve"
-    timing: Month 6 onward
-    goal: Make data quality part of the monthly routine.
-    work: Monthly review of each owner's scorecard and exception queue. Monthly KPI pack to the management team, with caveats. Quarterly review of rules and thresholds. Use the clean data to decide on replacing the MRPII system.
-    exit: Data quality index trending up for three consecutive months.
+- phase: 1. Discovery and baseline
+  timing: Months 1 to 3
+  objective: Find out from the real systems how bad things are, and freeze that as the baseline every benefit is
+    measured against. Contain the EN 1090 exposure at goods-in before anything else changes, and get the Corvus
+    knowledge out of one person's head.
+  entry: The management committee has approved the programme charter and the Phase 1 budget. Sponsor and programme
+    manager appointed. Each system's owner has agreed to production extracts being taken; the Corvus key user is
+    released two days a week, with half their day job backfilled.
+  exit: Baseline pack signed by the four data owners and the Finance Manager, and stored as a read-only snapshot.
+    Real extracts profiled; every difference from the demonstrator documented with the rule or contract change that
+    handles it. Cleanse sized in hours from the real queues and measured minutes per item, with a named steward
+    and weekly hours for each domain. Goods-in control live at both sites for at least four weeks, with no receipt
+    booked without heat number and certificate, checked by the Quality Manager against the goods received log. Duplicate
+    certificates requested for every untraceable receipt; certification body briefed. Every task in the Corvus runbook
+    performed by the backup user unaided. Vendor answers received in writing, or the fallback agreed. Data protection
+    impact assessment approved; calendar rule signed by the Finance Manager and the Production Controller. Re-baselined
+    plan and budget approved at review 1.
+- phase: 2. Master data cleanse
+  timing: Months 3 to 8
+  objective: One supplier, one material code, one unit of measure and one job number in every system, and the historic
+    backlog of exceptions cleared. Phase 3 then carries clean records, and Phase 4 has clean works orders and codes
+    for its pick lists.
+  entry: 'Phase 1 exit approved at review 1. Stewards named, with weekly hours ring-fenced from the Phase 1 sizing
+    and written into their objectives. Stewards trained (see `docs/training-plan.md`: purchasing and finance). Supplier
+    merge procedure approved by the Finance Manager.'
+  exit: Match review queue empty, or every open item accepted by its owner with a recorded reason. Master data rules
+    DQ-04, DQ-05, DQ-07, DQ-08, DQ-09 and DQ-10 at threshold for four consecutive weekly runs. Every live job in
+    the crosswalk, and no finance job code outside it. Every untraceable receipt either traced or given a recorded
+    decision by the Quality Manager. No three-way exception older than 90 days without an owner's decision. Every
+    stock line counted within the last 90 days.
+- phase: 3. Read-only integration and reporting
+  timing: Months 5 to 10
+  objective: Collect data from Corvus and finance automatically every night into the warehouse, without writing
+    anything back, and replace the hand-built management reports with the KPI pack, scorecards and exception queues.
+    Read-only comes first, so a mistake in the integration can never damage a working system.
+  entry: 'Phase 1 exit: vendor rights confirmed, data protection impact assessment approved, calendar rule agreed.
+    Server provisioned by the IT support provider. Interface specifications signed by each interface owner. Phase
+    2 under way. Golden records are not a precondition, because the matching stage handles messy data, as the prototype
+    shows.'
+  exit: 30 consecutive nightly loads with no unplanned failure, and any failure recovered by the next morning. Fewer
+    than 0.1% of rows quarantined. KPI pack issued from the warehouse for three consecutive month-ends, reconciled
+    to the management accounts within the tolerance the Finance Manager sets, and signed by the owners. Every old
+    report on the parallel-run list switched off. Form designs signed by the supervisors at both sites after usability
+    testing.
+- phase: 4. Process change and write-back
+  timing: Months 9 to 15
+  objective: Change how data is created, so the drift cannot come back. Shop-floor forms replace the spreadsheets,
+    and material issues are recorded. Heat number, certificate and grade become compulsory, every service is bought
+    on a purchase order, and steel is charged to jobs from what was issued. Approved master data flows back to Corvus
+    and finance automatically.
+  entry: 'Phase 2 exit: clean works orders and codes for the pick lists, and golden records to write back. Nightly
+    loads stable for 30 nights. The full Phase 3 exit follows in month 10. Forms signed by supervisors after usability
+    testing; training materials ready; floor champions trained. Employee representatives consulted; the data protection
+    impact assessment covers the forms. Factory production control procedures updated and the Quality Manager''s
+    traceability gate passed. Cutover dates clear of the financial year end, the year-end stocktake, works shutdowns
+    and the certification body''s surveillance visit. Terminals and Wi-Fi installed and tested in every bay at the
+    go-live site.'
+  exit: 'All four shop-floor spreadsheets retired at both sites and archived read-only. At each site, for eight
+    consecutive weeks: at least 98% of hours booked on the form within 24 hours against a live works order; rules
+    DQ-23, DQ-27, DQ-28, DQ-29 and DQ-30 at threshold. Material issues recorded for at least 95% of steel by weight
+    on works orders started after go-live, and traceability coverage of at least 99% on that work. No invoice without
+    a purchase order outside exempt nominals for two consecutive months. Write-back running for a month with no
+    unreconciled difference between the master data service, Corvus and finance.'
+- phase: 5. Embed and handover
+  timing: Months 14 to 18
+  objective: Make the new way business as usual, owned by the business rather than by the programme. Prove the benefits
+    against the Phase 1 baseline, hand over support and close the programme.
+  entry: Phase 4 exit measures met at the pilot site. The second site can finish Phase 4 in parallel. Support model
+    agreed by the sponsor. Internal support owner named, with time set aside to take the handover.
+  exit: The data quality index at or above its target for three consecutive months, with the queues cleared by the
+    owners' own stewards and no programme staff. Benefits review signed by the Finance Manager, with each benefit
+    shown against its baseline and the query that produces it. Runbooks accepted by the support owner; two trained
+    people for every interface and form. Every open risk closed or moved to the company risk register with an owner.
+    Programme closed at review 6.
+
+reviews:
+- review: 1
+  month: 3
+  decisions: Accept the baseline; approve Phase 1 exit; approve the re-baselined plan and budget; release Phase
+    2 and Phase 3 funding
+  evidence: Signed baseline pack; profiling of the real extracts against the demonstrator; the cleanse sized from
+    real queues; vendor confirmations; data protection impact assessment; goods-in control results
+- review: 2
+  month: 6
+  decisions: Confirm the cleanse is on track or add resource; approve the parallel reporting run
+  evidence: Cleanse burn-down against plan; first nightly load log; certificate recovery status; top risks
+- review: 3
+  month: 9
+  decisions: Ratify Phase 2 exit; approve the Phase 4 build; choose the pilot site
+  evidence: Master data rules at threshold; first parallel month-end; forms usability results; first benefits reading
+    on stock accuracy, aged exceptions and WIP ageing
+- review: 4
+  month: 12
+  decisions: Go or no-go for the second site
+  evidence: Pilot site exit measures; dual-running hours; traceability on new work; benefits reading
+- review: 5
+  month: 15
+  decisions: Approve Phase 4 exit; start the handover; agree the scope of the benefits review
+  evidence: Phase 4 exit measures at both sites; write-back reconciliation; benefits reading
+- review: 6
+  month: 18
+  decisions: Accept the benefits review; close the programme; decide on replacing Corvus
+  evidence: Benefits review against the baseline; handover acceptance; remaining risks; the Corvus options paper
 
 risks:
-  - id: R1
-    risk: Certificates for steel already on site cannot be recovered.
-    likelihood: High
-    impact: High
-    owner: Quality Manager
-    mitigation: Request duplicates from mills by heat number. Assess each job by execution class, and agree with the certification body and customer whether remedial testing is needed.
-  - id: R2
-    risk: Supervisors drift back to their own spreadsheets.
-    likelihood: Medium
-    impact: High
-    owner: Production Controller
-    mitigation: Keep the new booking form simpler than the spreadsheet. Show each supervisor their own data quality score weekly.
-  - id: R3
-    risk: Data owners have no time to clear review and exception queues.
-    likelihood: Medium
-    impact: Medium
-    owner: Finance Manager
-    mitigation: Ring-fence two hours a week per owner for eight weeks. The review queue is sized in hours, so the ask is specific.
-  - id: R4
-    risk: Merging supplier accounts causes a duplicate or misdirected payment.
-    likelihood: Low
-    impact: High
-    owner: Finance Manager
-    mitigation: Reconcile supplier statements first, freeze payment runs on accounts being merged, and require two signatures on bank detail changes.
-  - id: R5
-    risk: Restated job costs change reported margins on live contracts.
-    likelihood: Medium
-    impact: Medium
-    owner: Finance Manager
-    mitigation: Restate from a fixed date forward, and explain each movement with the job cost reconciliation drill-down.
-  - id: R6
-    risk: KPIs are read without their caveats and drive the wrong decision.
-    likelihood: Medium
-    impact: Medium
-    owner: Production Controller
-    mitigation: Every KPI in the pack carries its caveat, and the owner signs off the pack before it is issued.
-  - id: R7
-    risk: Real extracts are messier than this demonstrator suggests.
-    likelihood: High
-    impact: Medium
-    owner: Purchasing Manager
-    mitigation: Profile the real extracts in Phase 0, before committing to dates, and add rules for anything new.
-  - id: R8
-    risk: The Corvus vendor limits extract access or charges for it.
-    likelihood: Medium
-    impact: Medium
-    owner: Purchasing Manager
-    mitigation: Confirm export rights in the support contract in Phase 0; fall back to scheduled report exports.
+- id: R01
+  category: People
+  risk: Shop-floor resistance to time-booking discipline
+  likelihood: 4
+  impact: 5
+  inherent: 20
+  mitigation: 'Design the booking form with operators at both sites and usability-test it before build sign-off:
+    a booking takes under 30 seconds and is picked from the live works orders for that bay, with no numbers typed.
+    The Managing Director commits in writing, agreed with employee representatives and recorded in the data protection
+    impact assessment, that bookings are used for job costing, traceability and welder records and never for individual
+    performance management. Train a floor champion per site per shift first, keep the paper fallback, show each
+    site its own booking quality weekly, and pilot one site before the second.'
+  owner: Production Controller
+  residual_likelihood: 3
+  residual_impact: 4
+  residual: 12
+- id: R02
+  category: Data
+  risk: Master data cleanse effort underestimated by an order of magnitude
+  likelihood: 4
+  impact: 4
+  inherent: 16
+  mitigation: 'Size the cleanse in Phase 1 from the real queues, with minutes per item measured on a timed sample
+    rather than assumed, and count everything the prototype''s 9-hour estimate leaves out: certificate recovery,
+    aged exceptions, recounts, stale works orders and bank detail checks. Plan at the measured rate plus 50%. Clean
+    only records used in the last 24 months and archive the rest. Ring-fence steward hours and report the burn-down
+    weekly; if it falls 20% behind for three weeks, bring in temporary cleanse support rather than stretch the phase.'
+  owner: Programme manager
+  residual_likelihood: 2
+  residual_impact: 4
+  residual: 8
+- id: R03
+  category: People
+  risk: Key-person dependency on the one person who understands Corvus
+  likelihood: 3
+  impact: 5
+  inherent: 15
+  mitigation: In Phase 1, record walkthroughs of every extract, report, batch routine and month-end task, write
+    the runbook, and name a backup user who performs each task unaided before Phase 1 can exit. Backfill half the
+    key user's day job so the programme gets their time without burning them out. Agree a retention arrangement
+    to month 18, and add named consultant days to the Corvus support contract as a second line.
+  owner: Programme sponsor
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
+- id: R04
+  category: Compliance
+  risk: EN 1090 compliance exposure during the transition
+  likelihood: 3
+  impact: 5
+  inherent: 15
+  mitigation: 'Contain at goods-in in Phase 1, before any system changes: no heat number and 3.1 certificate, no
+    booking into stock, and untraceable steel red-tagged into a quarantine bay. Update the factory production control
+    procedures and brief the certification body before each go-live. The Quality Manager''s traceability gate must
+    pass before any cutover, and every cutover keeps a paper fallback that captures heat numbers. Run the traceability
+    reconciliation weekly through the transition, with any new receipt lacking a full chain raised as a same-day
+    critical exception.'
+  owner: Quality Manager
+  residual_likelihood: 2
+  residual_impact: 5
+  residual: 10
+- id: R05
+  category: People
+  risk: Dual-running cost and fatigue
+  likelihood: 4
+  impact: 3
+  inherent: 12
+  mitigation: 'Give every parallel run a fixed end date and switch-off criteria agreed before it starts: three month-ends
+    for reporting, four weeks per site for the forms. The owner switches off against the criteria, not by consensus,
+    and the old spreadsheets are locked read-only that day. Budget the extra hours per role in the Phase 1 plan,
+    backfill routine keying with temporary staff, and report the extra hours at every review.'
+  owner: Programme manager
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
+- id: R06
+  category: Data
+  risk: The finance calendar and the production week never align
+  likelihood: 5
+  impact: 3
+  inherent: 15
+  mitigation: Agree one calendar rule in Phase 1 and build it into the warehouse as a date table that maps every
+    day to its production week and its finance period. Monthly KPIs allocate bookings by booking date, not by week,
+    and weekly capacity is prorated by working days until the forms capture it daily. Every KPI states which calendar
+    it uses, and the management accountant reconciles warehouse labour to the ledger each month with every difference
+    explained.
+  owner: Finance Manager
+  residual_likelihood: 2
+  residual_impact: 2
+  residual: 4
+- id: R07
+  category: Commercial
+  risk: Benefits claimed but never measured because no baseline was taken
+  likelihood: 4
+  impact: 4
+  inherent: 16
+  mitigation: Freeze the baseline at the end of Phase 1 from the real data, signed by the Finance Manager and stored
+    as a snapshot that is never overwritten, with each measure's monthly range over 12 months so improvement can
+    be told from noise. Give every benefit an owner, a KPI definition and the query that produces it. A changed
+    definition restates the baseline instead of flattering the trend. Read benefits at reviews 3 to 6, and count
+    one only when it has held for three months.
+  owner: Finance Manager
+  residual_likelihood: 1
+  residual_impact: 4
+  residual: 4
+- id: R08
+  category: Compliance
+  risk: Certificates for steel already despatched cannot be recovered
+  likelihood: 4
+  impact: 4
+  inherent: 16
+  mitigation: Request duplicate certificates from mills and stockholders by heat number from Phase 1, starting with
+    EXC3 work such as towers and rail structures. The Quality Manager assesses each exposed job by execution class
+    and agrees with the certification body and the customer whether testing or notification is needed. Take legal
+    and insurance advice before any customer is notified.
+  owner: Quality Manager
+  residual_likelihood: 3
+  residual_impact: 3
+  residual: 9
+- id: R09
+  category: Compliance
+  risk: Booking data on named operators breaches data protection law as covert performance monitoring
+  likelihood: 3
+  impact: 4
+  inherent: 12
+  mitigation: Complete a data protection impact assessment before real bookings are loaded, and issue a privacy
+    notice to employees. Limit the purposes to job costing, traceability and welder qualification records. Reports
+    aggregate by works order, bay and site; operator-level data is open only to the Quality Manager for welder records.
+    Set a retention period and delete to it.
+  owner: Finance Manager
+  residual_likelihood: 1
+  residual_impact: 4
+  residual: 4
+- id: R10
+  category: Compliance
+  risk: Financial controls weaken at cutover
+  likelihood: 2
+  impact: 4
+  inherent: 8
+  mitigation: Keep every finance cutover at least six weeks away from the financial year end, and brief the external
+    auditor on the timetable before Phase 3. The three-way match exception queue stays the control of record throughout,
+    and no held invoice is paid. Archive retired spreadsheets and reports read-only for the statutory retention
+    period.
+  owner: Finance Manager
+  residual_likelihood: 1
+  residual_impact: 4
+  residual: 4
+- id: R11
+  category: Technical
+  risk: Corvus cannot record material issues or enforce mandatory fields
+  likelihood: 3
+  impact: 4
+  inherent: 12
+  mitigation: Test on a copy of Corvus in Phase 1 whether issues can be posted, fields made mandatory and import
+    files accepted. If issues cannot be posted, record them on the shop-floor form against the cutting list and
+    load them nightly. If fields cannot be made mandatory, check them at the form and quarantine any gap the next
+    morning, so detection by the next morning replaces prevention.
+  owner: Production Controller
+  residual_likelihood: 3
+  residual_impact: 2
+  residual: 6
+- id: R12
+  category: Commercial
+  risk: The Corvus vendor restricts or charges for extract and import access
+  likelihood: 3
+  impact: 4
+  inherent: 12
+  mitigation: Get written confirmation of extract and import rights and prices in Phase 1, before the Phase 3 build
+    is committed. Fall back to scheduled report exports for reading and steward-keyed change lists for writing,
+    both already allowed by the integration design. Hold a line for vendor fees in the contingency.
+  owner: Purchasing Manager
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
+- id: R13
+  category: Technical
+  risk: Shop-floor terminals fail in the fabrication shop
+  likelihood: 3
+  impact: 3
+  inherent: 9
+  mitigation: Survey Wi-Fi in every bay in Phase 1, because steel-framed bays and cranes block the signal. Fit industrial-rated
+    terminals at bay ends, usable in gloves and away from grinding and weld spatter. The form works offline and
+    syncs later; the paper fallback sheet is keyed the next day and marked late. Hold spare terminals at each site.
+  owner: Production Controller
+  residual_likelihood: 2
+  residual_impact: 2
+  residual: 4
+- id: R14
+  category: Technical
+  risk: Nightly loads fail or run partially and decisions are taken on stale figures
+  likelihood: 3
+  impact: 3
+  inherent: 9
+  mitigation: Keep loads all-or-nothing, as the prototype already is, so a failed load leaves the previous night's
+    complete version in place. Show the "as at" date on every report. Alert the owner of a failed load by the next
+    morning, and check the run log daily in hypercare and weekly after.
+  owner: Integration lead
+  residual_likelihood: 2
+  residual_impact: 2
+  residual: 4
+- id: R15
+  category: Technical
+  risk: The new server and extract accounts widen the attack surface for finance and supplier data
+  likelihood: 2
+  impact: 5
+  inherent: 10
+  mitigation: Use read-only extract accounts with the least access needed, and keep the warehouse on a company server
+    inside the existing backup, patching and access control. Bank details are never extracted. Apply Cyber Essentials
+    controls to the new server and review access at every management committee review.
+  owner: Finance Manager
+  residual_likelihood: 1
+  residual_impact: 5
+  residual: 5
+- id: R16
+  category: Data
+  risk: Real extracts are messier than the demonstrator suggests
+  likelihood: 4
+  impact: 3
+  inherent: 12
+  mitigation: Run the prototype pipeline on the real extracts in month 2 and profile them before committing any
+    later date. Add a contract or rule for every new pattern found, and re-baseline the plan at review 1 from what
+    the real data shows.
+  owner: Integration lead
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
+- id: R17
+  category: Data
+  risk: A wrong automatic match merges two grades of the same section
+  likelihood: 2
+  impact: 5
+  inherent: 10
+  mitigation: 'Never infer grade where a section is stocked in more than one grade: those lines go to a person with
+    the mill certificate. Merge automatically only at a score of 95 or more. The buyer audits a sample of 20 automatic
+    matches each week during Phase 2, and every merge is reversible because the crosswalk keeps each original value.'
+  owner: Purchasing Manager
+  residual_likelihood: 1
+  residual_impact: 5
+  residual: 5
+- id: R18
+  category: Data
+  risk: A supplier merge or write-back causes a duplicate or misdirected payment
+  likelihood: 2
+  impact: 5
+  inherent: 10
+  mitigation: Reconcile supplier statements before merging and freeze payment runs on accounts being merged. Bank
+    details never travel through the integration and change only under dual signature, confirmed by telephone to
+    a number already on file. Write-back starts as steward-keyed change lists and is automated only after a dry
+    run on a copy.
+  owner: Finance Manager
+  residual_likelihood: 1
+  residual_impact: 5
+  residual: 5
+- id: R19
+  category: Data
+  risk: KPIs are read without their caveats and drive the wrong decision
+  likelihood: 3
+  impact: 3
+  inherent: 9
+  mitigation: Every KPI in the pack carries its caveat and is signed by its owner before issue. OTIF is labelled
+    as despatch against the internal planned finish until the delivery note form captures the contract promise date,
+    and is then restated. Senior management training covers reading the caveats.
+  owner: Production Controller
+  residual_likelihood: 2
+  residual_impact: 2
+  residual: 4
+- id: R20
+  category: People
+  risk: Data owners and stewards have no time to clear the queues
+  likelihood: 4
+  impact: 3
+  inherent: 12
+  mitigation: Ring-fence steward hours from the measured Phase 1 sizing and write them into objectives. Review each
+    owner's scorecard monthly at the data governance group, apply the escalation route's time limits, and backfill
+    routine work where the hours cannot be found.
+  owner: Programme sponsor
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
+- id: R21
+  category: Commercial
+  risk: A contract peak takes the same people and the programme stalls
+  likelihood: 4
+  impact: 3
+  inherent: 12
+  mitigation: Compare programme load with the order book at every review. Plan go-lives away from known peaks and
+    shutdowns, and pilot at the site with the lighter load. If a peak hits, pause the phase cleanly at a gate rather
+    than cut its exit criteria.
+  owner: Programme sponsor
+  residual_likelihood: 3
+  residual_impact: 2
+  residual: 6
+- id: R22
+  category: Commercial
+  risk: Restated job costs change reported margins on live contracts
+  likelihood: 3
+  impact: 3
+  inherent: 9
+  mitigation: Restate from a fixed date forward and never reopen agreed final accounts. Explain each movement with
+    the job cost reconciliation drill-down, and brief project managers before the first restated pack.
+  owner: Finance Manager
+  residual_likelihood: 2
+  residual_impact: 2
+  residual: 4
+- id: R23
+  category: Commercial
+  risk: Budget overrun from vendor fees, contractor days and shop-floor hardware
+  likelihood: 3
+  impact: 3
+  inherent: 9
+  mitigation: Release funding phase by phase at the management committee reviews against the re-baselined plan.
+    The sponsor holds the contingency, hardware and vendor work is bought on fixed-price quotes, and spend against
+    plan is reported at every review.
+  owner: Programme sponsor
+  residual_likelihood: 2
+  residual_impact: 3
+  residual: 6
 
 training:
-  - audience: Management team
-    content: Reading the KPI pack and the data quality index, including what each caveat means.
-    format: Workshop
-    duration: 90 minutes
-    when: Phase 0
-  - audience: Data owners (Purchasing, Production, Finance, Quality)
-    content: Ownership duties; working the exception and review queues in the app; tracing a figure to its source line.
-    format: Half-day session, then a monthly clinic
-    duration: 3.5 hours
-    when: Phase 1
-  - audience: Goods-in and stores
-    content: Recording heat number, certificate reference and grade on every receipt; what to do when a certificate is missing.
-    format: Toolbox talk at goods-in
-    duration: 45 minutes
-    when: Phase 1
-  - audience: Buyers
-    content: Ordering by full material code including grade; raising a purchase order for all subcontract and service spend.
-    format: Desk session
-    duration: 1 hour
-    when: Phase 1
-  - audience: Quality team
-    content: Using the traceability reconstruction and NCR costing to manage EN 1090 exposure.
-    format: Desk session
-    duration: 1 hour
-    when: Phase 1
-  - audience: Finance team
-    content: Clearing three-way match exceptions; charging steel to jobs from issues; the job cost reconciliation.
-    format: Desk session
-    duration: 2 hours
-    when: Phase 2
-  - audience: Shop-floor supervisors
-    content: The structured booking form, choosing works orders, and entering dates and hours.
-    format: Toolbox talk and floor walk
-    duration: 30 minutes
-    when: Phase 3
+- role: Shop-floor operators
+  method: Toolbox talk and hands-on at the bay terminal, then two weeks of floor-champion support
+  duration: 45 minutes; 75 minutes for saw and stores operatives
+  competence check: Floor champion observes a booking, a correction and the paper fallback; first two weeks of bookings
+    reviewed for coaching
+  when: Two weeks before their site goes live (months 11 and 13)
+- role: Site supervisors
+  method: Workshop off the floor, practical on the floor, first week shadowed; scorecard session in Phase 3
+  duration: 5 hours 30 minutes
+  competence check: Practical scenario on the test system; the site's shop-floor rules at threshold for four weeks
+    after go-live
+  when: Month 7; two weeks before their site goes live
+- role: Purchasing
+  method: Desk sessions, then paired review of real queue items
+  duration: 4 hours
+  competence check: First 20 review decisions checked by the Purchasing Manager; new orders pass the grade and code
+    rules
+  when: Months 3 and 10
+- role: Finance
+  method: Desk sessions, then supervised parallel month-ends
+  duration: 4 hours 30 minutes, plus three supervised month-ends
+  competence check: Three parallel month-ends signed by the Finance Manager
+  when: Months 3, 8 and 13
+- role: Project managers
+  method: Desk session, then a review of one of their own live jobs
+  duration: 2 hours 30 minutes
+  competence check: Explains a margin movement on their own job from the drill-down; promised dates on every delivery
+  when: Months 8 and 10
+- role: Senior management
+  method: Two workshops
+  duration: 3 hours
+  competence check: At review 3, each member presents one KPI with its caveat and the decision it supports
+  when: Months 3 and 9
+- role: Goods-in and stores
+  method: Toolbox talk, certificate reading at the bench, witnessed receipts; issue recording before go-live
+  duration: 2 hours 45 minutes
+  competence check: First 10 receipts witnessed by the QA inspector; heat number, certificate and grade on every
+    new receipt
+  when: Month 2; two weeks before their site goes live
+- role: Quality team
+  method: Desk session, then a mock traceability audit
+  duration: 4 hours
+  competence check: Traces one assembly on a live EXC3 job to its mill certificate within 30 minutes, unaided
+  when: Months 2 and 10
 
 ownership:
   - domain: Material master

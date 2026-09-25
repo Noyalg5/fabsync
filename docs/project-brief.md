@@ -52,10 +52,10 @@ source of project context is this file.
 | `src/fabsync/design/` | Diagram figures and renderer: fills `docs/diagrams/templates/` with measured figures |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
-| `config/` | `roadmap.yaml` phases, risks, training, data domains; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
+| `config/` | `roadmap.yaml` phases, management committee reviews, risks, training and data domains, mirroring the planning documents; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
-| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md` |
+| `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md`; design documents; planning documents `rollout-plan.md`, `risk-register.md`, `training-plan.md` and `benefits-case.md` |
 | `tests/` | pytest suite |
 | `export/` | Packed demo bundle (not committed) |
 
@@ -273,6 +273,20 @@ formatting, charts and clickable figures.
   `docs/data-ownership.md`. They are written for a manufacturing manager, with every technical term
   defined at first use.
 - **Tests:** `tests/test_design.py` fails if the committed diagrams no longer match the data.
+
+## Delivery planning
+
+- **Documents:** `docs/rollout-plan.md` (five phases over 18 months, each with objective, activities, entry
+  and exit criteria, duration, dependencies and roles, and a management committee review every quarter),
+  `docs/risk-register.md` (23 risks scored 1 to 5 for likelihood and impact, inherent and residual),
+  `docs/training-plan.md` (by role, each with a competence check) and `docs/benefits-case.md`.
+- **The benefits case is ILLUSTRATIVE throughout.** Every figure is labelled measured (synthetic), modelled
+  or assumption. Assumptions are numbered A1 to A9, each with how it will be replaced by a measurement.
+- **Rule:** never present a modelled figure as a measured one.
+- **Consistency:** `config/roadmap.yaml` mirrors the phases, reviews, risks and training, and the Roadmap
+  page shows them. `tests/test_planning.py` fails if the config and the documents disagree, if a risk's
+  scores do not multiply out, or if any figure the documents quote no longer reproduces from a freshly
+  built warehouse.
 
 ## Naming and style
 
