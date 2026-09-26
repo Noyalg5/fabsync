@@ -17,10 +17,18 @@ make reconcile # three-way match, job cost, stock accuracy, material traceabilit
 make kpi       # build the documented KPI views; data dictionary and KPI report
 make run-all   # generate synthetic data, load the warehouse, run every stage
 make app       # open the demonstrator at http://localhost:8501 (runs offline)
+make pack      # from a clean run: the 16-page A4 management pack PDF, and its charts as PNGs, in export/
 make test      # run the test suite
 ```
 
 Requires Python 3.11 or later. Runs entirely offline.
+
+## The management pack
+
+`make pack` rebuilds everything from a clean run, then writes `export/fabsync-management-pack.pdf`: sixteen
+A4 pages that tell the whole story to a reader who has never seen the app. Every chart and diagram in it is
+also saved as a 300 dpi PNG in `export/figures/`, numbered in pack order, for slides. Rebuilding gives
+byte-identical files.
 
 ## Documentation
 

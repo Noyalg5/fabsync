@@ -2,6 +2,59 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 10: Management pack (2026-09-26)
+
+**Done**
+- `make pack` runs `run-all` from a clean state, then `export/build_pack.py`. It writes
+  `export/fabsync-management-pack.pdf` (16 A4 pages, 2.7 MB) and 13 charts and diagrams as 300 dpi PNGs in
+  `export/figures/`, numbered in pack order for slides. From `make clean` it takes about 23 seconds.
+- **Pages, in the brief's order:**
+  - cover with contents;
+  - executive summary leading with £4.32m value at risk, the data quality index of 92.1, and 1,103
+    untraceable tonnes;
+  - the problem;
+  - order to cash and procure to pay as swimlanes with their break points;
+  - one page per reconciliation engine, figure first and method second, each closing with its caveat;
+  - the target architecture;
+  - ownership matrix, rule summary, escalation route and scores by owner;
+  - the nine KPIs with every caveat word for word;
+  - the 18-month plan with its timeline and reviews;
+  - the risk register with heat maps;
+  - the ILLUSTRATIVE benefits case;
+  - a one-page summary that restates its key terms, so it can be left behind.
+- **Nothing typed by hand.** Figures come from the warehouse and plans from `config/`. The process maps and
+  architecture are parsed from the committed diagram sources. The ownership matrix, escalation route,
+  timeline and benefits tables come from the committed documents, which their own tests keep true.
+- `src/fabsync/palette.py` now holds the colour semantics. The app and the pack both import it, so a colour
+  means the same thing in both.
+- `src/fabsync/pack/terms.py` defines 46 technical terms. The builder defines each at its first use, in
+  document order.
+- `make clean` no longer deletes everything in `export/`, which would have removed the builder. It removes
+  only what `make pack` writes.
+- New pinned dependencies: matplotlib and reportlab for the pack, and pypdf for the tests.
+- `tests/test_pack.py`: 12 tests. They build a fresh warehouse, run the script twice exactly as `make pack`
+  does, and read the PDF back. Four planted errors were each caught: a term used before its definition, an
+  off-palette colour, a table name in the text, and a modelled figure presented as measured. 173 tests in
+  total.
+
+**Changed from earlier missions**
+- **Process maps redrawn for print.** The committed Mermaid PNGs are fine on screen, but on A4 their text
+  would print at about 4 to 5 pt. The pack redraws both maps as swimlanes, one lane per system, with
+  re-keyed hand-offs in the accent colour and break points in a column on the right. The target
+  architecture is redrawn the same way. The diagram sources remain the single source for all of them.
+
+**Verified**
+- `make clean && make pack` produced a PDF byte-identical to a separate build from the same code. The
+  committed documents were unchanged by the clean run.
+- Every page was rendered and inspected. Section starts match the contents page.
+
+**Not verified**
+- Pages have not been printed on paper. Legibility was judged from on-screen renders at 80 dpi and from
+  the 300 dpi figures.
+
+**Next**
+- None set.
+
 ## Mission 9: Delivery planning (2026-09-26)
 
 **Done**

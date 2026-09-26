@@ -20,6 +20,7 @@ data/raw/*
 !data/raw/.gitkeep
 export/*
 !export/.gitkeep
+!export/build_pack.py
 
 # OS
 .DS_Store

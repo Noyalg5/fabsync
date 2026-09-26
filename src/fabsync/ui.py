@@ -23,15 +23,11 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from fabsync.palette import ACCENT, GRID, INK, MUTED, RULE, SYSTEM_COLOURS, SYSTEM_LABELS  # noqa: F401
+
 DEFAULT_WAREHOUSE = Path("data/warehouse/fabsync.duckdb")
 BANNER = "Demonstration prototype. All data is synthetic."
 
-ACCENT = "#0F5C7A"
-INK = "#1F2933"
-MUTED = "#7B8794"
-RULE = "#CBD2D9"
-SYSTEM_COLOURS = {"corvus_mrp": "#3B6EA8", "finance": "#B07A2A", "shop_floor": "#4F8A55"}
-SYSTEM_LABELS = {"corvus_mrp": "Corvus MRP", "finance": "Finance system", "shop_floor": "Shop-floor spreadsheets"}
 MONEY_HINTS = ("value", "amount", "cost", "gap", "price", "turnover", "invoiced", "exposure", "expected_invoice",
                "_material", "_labour", "_subcontract", "_plant", "net_adjustment", "sales")
 NOT_MONEY_HINTS = ("pct", "accuracy", "ratio", "kg", "hours", "rank", "score", "count", "lines", "rows", "_id")
@@ -203,7 +199,7 @@ def trace_rows(rows: pd.DataFrame, key: str) -> None:
 def _base(chart: alt.Chart, height: int) -> alt.Chart:
     return (chart.properties(height=height)
             .configure_view(stroke=None)
-            .configure_axis(labelColor=INK, titleColor=INK, gridColor="#EEF1F4", domainColor=RULE, tickColor=RULE,
+            .configure_axis(labelColor=INK, titleColor=INK, gridColor=GRID, domainColor=RULE, tickColor=RULE,
                             labelFontSize=12, titleFontSize=12, titleFontWeight="normal")
             .configure_text(color=INK))
 

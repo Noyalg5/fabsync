@@ -50,6 +50,8 @@ source of project context is this file.
 | `src/fabsync/quality/` | Declarative data quality engine: `rules.py` loads and validates, `engine.py` runs, `checks.py` holds Python checks, `scorecard.py` reports |
 | `src/fabsync/reconcile/` | Four reconciliation engines (three-way match, job cost, stock accuracy, material traceability); `pipeline.py` publishes and verifies |
 | `src/fabsync/design/` | Diagram figures and renderer: fills `docs/diagrams/templates/` with measured figures |
+| `src/fabsync/pack/` | Management pack: `facts.py` gathers every figure, `charts.py` and `diagrams.py` draw at 300 dpi, `terms.py` the glossary, `document.py` the pages, `build.py` orchestrates |
+| `src/fabsync/palette.py` | Colour semantics shared by the app and the pack |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
 | `config/` | `roadmap.yaml` phases, management committee reviews, risks, training and data domains, mirroring the planning documents; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
@@ -57,7 +59,7 @@ source of project context is this file.
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
 | `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md`; design documents; planning documents `rollout-plan.md`, `risk-register.md`, `training-plan.md` and `benefits-case.md` |
 | `tests/` | pytest suite |
-| `export/` | Packed demo bundle (not committed) |
+| `export/` | `build_pack.py` (committed), the entry point for `make pack`; the PDF, `figures/` and demo bundle it writes (not committed) |
 
 Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `test`, `clean`.
 
@@ -287,6 +289,31 @@ formatting, charts and clickable figures.
   page shows them. `tests/test_planning.py` fails if the config and the documents disagree, if a risk's
   scores do not multiply out, or if any figure the documents quote no longer reproduces from a freshly
   built warehouse.
+
+## Management pack
+
+`make pack` runs `run-all` from a clean state, then `export/build_pack.py`, which writes
+`export/fabsync-management-pack.pdf` and `export/figures/*.png`.
+
+- **Sixteen A4 pages in the brief's order:** cover with contents; executive summary leading with value at
+  risk, the data quality index and untraceable tonnes; the problem; two swimlane process maps; one page per
+  reconciliation engine, figure first and method second; the target architecture; governance; KPI
+  definitions with caveats; the 18-month plan; the risk register; the ILLUSTRATIVE benefits case; and a
+  one-page summary to leave behind.
+- **Nothing typed by hand.** Figures come from the warehouse. The plan, reviews, risks and training come
+  from `config/roadmap.yaml`, and KPI definitions and caveats from `config/kpis.yaml`. The process maps and
+  architecture are parsed from the committed diagram sources and redrawn for A4. The ownership matrix,
+  escalation route, timeline and benefits tables come from the committed documents.
+- **Written for a reader who has never seen the app.** There is no code, no file paths and no terminal
+  output. Every technical term in `src/fabsync/pack/terms.py` is defined at its first use, in document
+  order.
+- **Charts:** 300 dpi PNGs, drawn with matplotlib to the app's rules. Only palette colours are used, system
+  colours wherever systems are compared, values are labelled directly with no legends, and each image
+  carries its title and the synthetic data statement. The PDF text uses the same embedded font.
+- **Reproducible:** the same warehouse gives byte-identical PDF and PNGs.
+- **Tests:** `tests/test_pack.py` builds a fresh warehouse, runs the script twice and reads the PDF. It
+  checks page count and size, section order, the synthetic statement on every page, figure before method,
+  no code or paths, first-use definitions, the ILLUSTRATIVE labelling, dpi, colours and byte identity.
 
 ## Naming and style
 
