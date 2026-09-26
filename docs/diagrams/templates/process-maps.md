@@ -37,7 +37,7 @@ allocates labour cost from payroll, separately from the hours operators booked.
 
 | Break point | What happens | Defect it causes | Measured |
 | --- | --- | --- | --- |
-| Job set-up | Job J-24-0871 is typed into finance as 24871 | Finance jobs with no production record | {{job_finance_only_codes}} job codes; {{job_finance_only_cost}} of cost |
+| Job set-up | Job J-24-0871 is typed into finance as {{example_job_code}} | Finance jobs with no production record | {{job_finance_only_codes}} job codes; {{job_finance_only_cost}} of cost |
 | Time booking | Works order numbers typed by hand on booking sheets | Hours booked to works orders that do not exist; unreadable rows | {{orphan_wos}} works orders, {{unallocated_hours}}; {{shopfloor_quarantined}} rows quarantined |
 | Labour costing | Finance allocates payroll hours without reference to bookings | Labour cost on a job disagrees with hours worked | {{labour_gap}} across jobs; {{labour_gap_jobs}} jobs out by more than 15% |
 | Despatch | Delivery notes carry no works order or heat number, and some no promised date | On-time delivery cannot be measured reliably, and traceability ends at the yard gate | OTIF {{otif}}; {{promised_missing}} notes without a promised date; {{trace_exposed_tonnes}} despatched untraceable |
@@ -67,7 +67,7 @@ by eye that the order, the receipt and the invoice agree. This check is the **th
 | --- | --- | --- | --- |
 | Supplier | Supplier name typed on each order; separate accounts in finance | One supplier under several records | {{supplier_dupes_confirmed}} confirmed, {{supplier_dupes_likely}} more likely |
 | Material code | Codes chosen freely; grade often left off | Same steel under several codes; grade unknown | {{material_variants}} materials written several ways; {{grade_unconfirmed_lines}} order and receipt lines without a grade |
-| Units | Steel ordered in kg, stocked in bars, issued in metres | Stock cannot be reconciled | {{uom_conflicts}} materials in three units; stock accuracy {{stock_accuracy}}, {{stock_value_error}} miscounted |
+| Units | Steel ordered in kg, stocked in bars, issued in metres | Stock cannot be reconciled | {{uom_conflicts}} materials in {{max_units}} units; stock accuracy {{stock_accuracy}}, {{stock_value_error}} miscounted |
 | Services | Galvanising, paint, erection ordered by phone | Spend with no order to check the invoice against | {{no_po_lines}} invoices, {{no_po_value}} |
 | Goods-in | Heat number and certificate typed from paper | Steel that cannot be traced to its certificate | {{receipts_missing_cert}} receipts; traceability coverage {{coverage}} |
 | Issue to job | Nothing recorded | Which steel went into which job can only be inferred | {{trace_exposed_jobs}} despatched jobs exposed; {{trace_exposed_sales}} of sales on them |

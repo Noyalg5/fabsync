@@ -27,6 +27,7 @@ dev = [
     "pytest==9.1.1",
     "ruff==0.16.8",
     "pypdf==6.19.0",
+    "coverage==7.16.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -43,3 +44,14 @@ src = ["src", "app", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.coverage.run]
+source = ["src/fabsync", "app", "export"]
+branch = true
+patch = ["subprocess"]
+omit = ["*/__main__.py"]
+
+[tool.coverage.report]
+show_missing = false
+skip_covered = false
+precision = 1

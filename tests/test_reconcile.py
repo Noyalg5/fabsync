@@ -101,9 +101,7 @@ def test_three_way_finds_the_seeded_failures(reconciled) -> None:
                        ((rows.category == "not yet due") & rows.received_date.notna())].po_no)
     assert flagged == uninvoiced
     over = {e["po_no"] for e in twm["invoice_over_po_by_more_than_5pct"]}
-    price = rows[rows.category == "price variance"]
-    assert set(price.po_no) <= over
-    assert len(price) >= 0.8 * len(over)
+    assert set(rows[rows.category == "price variance"].po_no) == over
 
 
 def test_three_way_values_and_ageing(reconciled) -> None:

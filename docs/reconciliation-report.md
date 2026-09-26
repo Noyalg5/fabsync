@@ -11,23 +11,23 @@ source file and line.
 
 | Engine | Exposure | Measured as |
 | --- | ---: | --- |
-| Three-way match | **£4,315,267.60** | purchase-to-pay value at risk (GBP) |
+| Three-way match | **£4,314,978.39** | purchase-to-pay value at risk (GBP) |
 | Job cost reconciliation | **£1,735,365.44** | gross unexplained job cost gap (GBP) |
 | Stock accuracy | **£15,297.69** | stock value error (GBP) |
 | Material traceability | **1,102.627 t** | tonnes despatched without full traceability |
 
 ## 1. Three-way match
 
-Purchase order to goods received note to purchase invoice. Tolerances: quantity ±2%; price the greater of 5% or £50. Rows: `recon.three_way_lines`, one per PO line and per invoice with no PO, each with its category, value at risk, age and a one-line reason.
+Purchase order to goods received note to purchase invoice. Tolerances: quantity ±2%; price ±5%. Rows: `recon.three_way_lines`, one per PO line and per invoice with no PO, each with its category, value at risk, age and a one-line reason.
 
 | Figure | Value | How it is calculated | Rows behind it |
 | --- | ---: | --- | --- |
-| Purchase-to-pay value at risk | **£4,315,267.60** | Sum of value at risk over every line in an exception category | `SELECT * FROM recon.three_way_lines WHERE is_exception` |
-| Lines: matched | **493** | Lines classified matched | `SELECT * FROM recon.three_way_lines WHERE category = 'matched'` |
-| Lines: quantity variance | **377** | Lines classified quantity variance | `SELECT * FROM recon.three_way_lines WHERE category = 'quantity variance'` |
-| Value at risk: quantity variance | **£115,552.56** | Value at risk on lines classified quantity variance | `SELECT * FROM recon.three_way_lines WHERE category = 'quantity variance'` |
-| Lines: price variance | **48** | Lines classified price variance | `SELECT * FROM recon.three_way_lines WHERE category = 'price variance'` |
-| Value at risk: price variance | **£59,292.62** | Value at risk on lines classified price variance | `SELECT * FROM recon.three_way_lines WHERE category = 'price variance'` |
+| Purchase-to-pay value at risk | **£4,314,978.39** | Sum of value at risk over every line in an exception category | `SELECT * FROM recon.three_way_lines WHERE is_exception` |
+| Lines: matched | **492** | Lines classified matched | `SELECT * FROM recon.three_way_lines WHERE category = 'matched'` |
+| Lines: quantity variance | **373** | Lines classified quantity variance | `SELECT * FROM recon.three_way_lines WHERE category = 'quantity variance'` |
+| Value at risk: quantity variance | **£115,129.39** | Value at risk on lines classified quantity variance | `SELECT * FROM recon.three_way_lines WHERE category = 'quantity variance'` |
+| Lines: price variance | **53** | Lines classified price variance | `SELECT * FROM recon.three_way_lines WHERE category = 'price variance'` |
+| Value at risk: price variance | **£59,426.59** | Value at risk on lines classified price variance | `SELECT * FROM recon.three_way_lines WHERE category = 'price variance'` |
 | Lines: missing GRN | **82** | Lines classified missing GRN | `SELECT * FROM recon.three_way_lines WHERE category = 'missing GRN'` |
 | Value at risk: missing GRN | **£304,399.47** | Value at risk on lines classified missing GRN | `SELECT * FROM recon.three_way_lines WHERE category = 'missing GRN'` |
 | Lines: missing invoice | **66** | Lines classified missing invoice | `SELECT * FROM recon.three_way_lines WHERE category = 'missing invoice'` |
@@ -35,13 +35,13 @@ Purchase order to goods received note to purchase invoice. Tolerances: quantity 
 | Lines: invoice with no PO | **726** | Lines classified invoice with no PO | `SELECT * FROM recon.three_way_lines WHERE category = 'invoice with no PO'` |
 | Value at risk: invoice with no PO | **£3,407,849.81** | Value at risk on lines classified invoice with no PO | `SELECT * FROM recon.three_way_lines WHERE category = 'invoice with no PO'` |
 | Lines: not yet due | **38** | Lines classified not yet due | `SELECT * FROM recon.three_way_lines WHERE category = 'not yet due'` |
-| Exceptions older than 90 days | **1,076** | Exception lines aged over 90 days | `SELECT * FROM recon.three_way_lines WHERE is_exception AND age_days > 90` |
+| Exceptions older than 90 days | **1,074** | Exception lines aged over 90 days | `SELECT * FROM recon.three_way_lines WHERE is_exception AND age_days > 90` |
 
 | Category | Lines | Value at risk | Oldest (days) |
 | --- | --- | --- | --- |
-| matched | 493 | £0 |  |
-| quantity variance | 377 | £115,553 | 718.0 |
-| price variance | 48 | £59,293 | 678.0 |
+| matched | 492 | £0 |  |
+| quantity variance | 373 | £115,129 | 718.0 |
+| price variance | 53 | £59,427 | 678.0 |
 | missing GRN | 82 | £304,399 | 723.0 |
 | missing invoice | 66 | £428,173 | 745.0 |
 | invoice with no PO | 726 | £3,407,850 | 724.0 |
@@ -54,8 +54,8 @@ Ageing of unmatched items, by lines:
 | invoice with no PO | 46 | 57 | 48 | 108 | 467 |
 | missing GRN | 4 | 2 | 12 | 5 | 59 |
 | missing invoice | 0 | 1 | 3 | 7 | 55 |
-| price variance | 5 | 0 | 1 | 5 | 37 |
-| quantity variance | 15 | 15 | 14 | 52 | 281 |
+| price variance | 7 | 1 | 3 | 5 | 37 |
+| quantity variance | 14 | 15 | 13 | 52 | 279 |
 
 Invoices with no PO, by spend type. Overheads on nominal 7000 are exempt:
 

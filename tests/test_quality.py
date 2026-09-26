@@ -68,7 +68,7 @@ def test_rule_file_is_complete() -> None:
     assert {r.severity for r in rs.rules} == {"critical", "high", "medium", "low"}
     assert {r.owner for r in rs.rules} == ROLES
     assert {r.check_type for r in rs.rules} == {"sql", "python"}
-    assert {d for r in rs.rules for d in r.covers_defects} == set(range(1, 11))
+    assert {d for r in rs.rules for d in r.covers_defects} == set(range(1, 14)) - {12}  # 12: job cost engine
     for r in rs.rules:
         assert r.description and r.consequence and r.corrective_action and 0 < r.threshold <= 1
 

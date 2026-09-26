@@ -82,10 +82,10 @@ changes at once.
 | S-02 | Finance job codes with no Corvus job | 20 | 0 | 8 | Each code mapped or closed. The crosswalk rule stops new ones being created. | High |
 | S-03 | Duplicate supplier entities | 5 confirmed, 3 more likely | 0 | 8 | Merged in finance, one account per Corvus code, old codes blocked | High |
 | S-04 | Receipts without a heat number or mill certificate, historic | 178 of 989 receipts | Every one traced or decided by the Quality Manager | 8 | A decision on every gap can be promised. A certificate for every gap cannot, because it depends on mills answering. | Medium |
-| S-05 | Three-way match exceptions older than 90 days | 1,076 | None without an owner's decision | 8 | Each chased, accrued, credited or written off with approval | Medium |
+| S-05 | Three-way match exceptions older than 90 days | 1,074 | None without an owner's decision | 8 | Each chased, accrued, credited or written off with approval | Medium |
 | KPI-04 | Stock accuracy | 89.6% | 95% | 9 | Every line not counted in 90 days is recounted and every material gets one stocking unit. On the 106 counted lines, 95% allows 5 lines out, against 11 today. | Medium |
 | KPI-07 | Share of WIP value over 90 days old | 54.9% of £714k | 32.8% | 9 | Works orders whose work has gone are closed. A5 puts 60% of the over-90-day value in that admin backlog, leaving 40% of £392k in a total that falls by the rest. The prototype cannot measure the backlog, because delivery notes do not name works orders. | Low |
-| DQI | Data quality index | 92.1 | Master data rules DQ-04, DQ-05, DQ-07, DQ-08, DQ-09 and DQ-10 at threshold | 8 | Phase 2 exit criterion | Medium |
+| DQI | Data quality index | 92.2 | Master data rules DQ-04, DQ-05, DQ-07, DQ-08, DQ-09 and DQ-10 at threshold | 8 | Phase 2 exit criterion | Medium |
 
 ### Phase 3. Read-only integration and reporting (months 5 to 10)
 
@@ -111,7 +111,7 @@ measurable.
 | S-10 | NCRs with no cost | 45 of 246 | Every NCR costed within 7 days | 13 | The NCR form reminds the Quality Manager after 7 days | High |
 | S-07 | Invoices with no purchase order | 726 invoices, £3.41m over 24 months | None outside exempt overhead nominals | 12 | No purchase order, no payment from month 10, using the service suppliers set up in Phase 2 | Medium |
 | S-13 | Capacity figures that disagree with the bookings | 198 of 204 site-weeks, 1,118 hours | None | 15 | Supervisors' totals and bookings come from the same form | High |
-| KPI-05 | Three-way match exception rate | 53.8% | 11.4% | 18 | Quantity variances fall by A1 (80%), as agreed shortfalls are recorded on the order at receipt. Price variances fall by A2 (80%), as invoices beyond tolerance are held and credited. Missing receipts and invoices fall by A8 (75%). The arithmetic is (377 × 0.2 + 48 × 0.2 + 148 × 0.25) / 1,066 lines assessed. | Low |
+| KPI-05 | Three-way match exception rate | 53.8% | 11.5% | 18 | Quantity variances fall by A1 (80%), as agreed shortfalls are recorded on the order at receipt. Price variances fall by A2 (80%), as invoices beyond tolerance are held and credited. Missing receipts and invoices fall by A8 (75%). The arithmetic is (373 × 0.2 + 53 × 0.2 + 148 × 0.25) / 1,066 lines assessed. | Low |
 | KPI-04 | Stock accuracy | 89.6% | Held at 95% or more | 18 | Recorded issues keep the book in step with the rack | Medium |
 | KPI-01 | OTIF delivery performance | 16.7% | 37.5% on today's definition | 18 | A6 assumes a quarter of late deliveries have an information cause the programme removes: steel not found or held in the wrong unit, a works order that does not exist, a WIP backlog hiding real progress. That gives 16.7% plus a quarter of the 83.3% late. The programme adds no shop capacity, so it does not reach the 95% standard on its own. | Low |
 | KPI-03 | Material yield and offcut waste | 76.2% (theoretical) | Restated baseline plus 2 points (A4) | 18 | Offcuts returned with their heat number can be reused. The baseline is restated once recorded issues show the actual yield. | Low |
@@ -122,7 +122,7 @@ measurable.
 
 | ID | Measure | Baseline, measured (synthetic) | Target, modelled | By month | Basis of the estimate | Confidence |
 | --- | --- | --- | --- | :-: | --- | --- |
-| DQI | Data quality index | 92.1 | 98.1, held for three months | 18 | 98.1 is the index the prototype would score if every critical and high rule met its threshold and the medium and low rules stayed as they are today. The Phase 2 and Phase 4 exit criteria bring those rules to threshold, and Phase 5 shows they stay there without the programme team. | Medium |
+| DQI | Data quality index | 92.2 | 98.0, held for three months | 18 | 98.0 is the index the prototype would score if every critical and high rule met its threshold and the medium and low rules stayed as they are today. The Phase 2 and Phase 4 exit criteria bring those rules to threshold, and Phase 5 shows they stay there without the programme team. | Medium |
 
 ## Summary at month 18
 
@@ -135,12 +135,12 @@ modelled.*
 | KPI-02 | Labour variance | 7.4% | `marts.kpi_scorecard` | Within ±10% | Within ±10%, with every hour on a live works order | Measured better, not moved |
 | KPI-03 | Material yield and offcut waste | 76.2% | `marts.kpi_scorecard` | 85% or more | Restated baseline plus 2 points | Phase 4 |
 | KPI-04 | Stock accuracy | 89.6% | `marts.kpi_scorecard` | 95% or more | 95% | Phases 2 and 4 |
-| KPI-05 | Three-way match exception rate | 53.8% | `marts.kpi_scorecard` | 5% or less | 11.4% | Phases 2, 3 and 4 |
+| KPI-05 | Three-way match exception rate | 53.8% | `marts.kpi_scorecard` | 5% or less | 11.5% | Phases 2, 3 and 4 |
 | KPI-06 | Material traceability coverage | 68.7% | `marts.kpi_scorecard` | 100% | 100% on new receipts; at least 99% on new works orders | Phases 1, 2 and 4 |
 | KPI-07 | WIP value and ageing | 54.9% over 90 days | `marts.kpi_scorecard` | No target | 32.8% over 90 days | Phase 2 |
 | KPI-08 | Capacity utilisation | 86.1% | `marts.kpi_scorecard` | 75% to 95% | Within 75% to 95%, from one source | Measured better, not moved |
 | KPI-09 | NCR rate and cost of quality | 1.3% | `marts.kpi_scorecard` | 2% or less | Every NCR costed; missing-certificate NCR cost 75% lower | Phases 1 and 4 |
-| DQI | Data quality index | 92.1 | `governance.dq_results` | No target | 98.1 | Phases 2 to 5 |
+| DQI | Data quality index | 92.2 | `governance.dq_results` | No target | 98.0 | Phases 2 to 5 |
 
 The OTIF target shows why the labels matter. The standard is 95%, while the programme's modelled target
 is 37.5%, resting on an assumption. Presenting the programme as the route to 95% would be the kind of
@@ -156,7 +156,7 @@ modelling step.
 
 | Benefit | Measured input (synthetic) | How the value is modelled | Low | Central | High | Confidence |
 | --- | --- | --- | --: | --: | --: | --- |
-| Overcharges stopped | 48 invoices beyond tolerance, £59k over 24 months | £30k a year, times A2 (50%, 80%, 95%) | £15k | £24k | £28k | Medium |
+| Overcharges stopped | 53 invoices beyond tolerance, £59k over 24 months | £30k a year, times A2 (50%, 80%, 95%) | £15k | £24k | £28k | Medium |
 | Offcuts reused | 5,118 tonnes of bars bought for 3,899 tonnes used over 24 months (76.2% yield), at an average £1,068 a tonne | The steel no longer bought each year if yield rises by A4 (1, 2 or 4 points), at the average price less the scrap value A3 (£888 a tonne net) | £29k | £58k | £113k | Low |
 | NCRs for a missing certificate avoided | 24 NCRs, £32k over 24 months | £16k a year, times A7 (50%, 75%, 90%) | £8k | £12k | £14k | Medium |
 | **Total a year** | | | **£52k** | **£94k** | **£156k** | Low |
@@ -174,7 +174,7 @@ These are real measured figures that are easy to turn into large, false savings.
 | Measured figure (synthetic) | Value | Why no pound benefit is claimed |
 | --- | --- | --- |
 | Invoices with no purchase order | £3.41m | The spend is real and may be correctly priced. Requiring an order is a control, not a saving. Any saving from quoting services competitively is speculative. |
-| Short deliveries beyond the 2% tolerance | £116k | The invoices on these lines agree with the quantity received, so no money was lost. The cost is steel short at the bay. |
+| Short deliveries beyond the 2% tolerance | £115k | The invoices on these lines agree with the quantity received, so no money was lost. The cost is steel short at the bay. |
 | Material cost charged to the wrong job | £1.43m | It cancels out across jobs, so the net effect is nil. The benefit is job margins that can be priced from, not cash. |
 | Gross unexplained job cost gap | £1.74m | As above. It measures how wrong individual job costs are, not money lost. |
 | WIP more than 90 days old | £392k | Closing works orders corrects the report. No cash moves. |

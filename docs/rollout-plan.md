@@ -224,7 +224,7 @@ clean works orders and codes for its pick lists.
   prototype).
 - Traceability: keep chasing duplicate certificates. The Quality Manager decides on every remaining gap
   (accept on evidence, test, or notify the customer), with the certification body where needed.
-- Clear three-way match exceptions older than 90 days (1,076 lines in the prototype) by chasing,
+- Clear three-way match exceptions older than 90 days (1,074 lines in the prototype) by chasing,
   accruing, obtaining credit notes or writing off with the Finance Manager's approval.
 - Recount every stock line not counted in the last 90 days and post agreed adjustments.
 - Close works orders whose work has gone, so WIP shows only work still in the shop.

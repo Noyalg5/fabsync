@@ -2,6 +2,140 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 11: Verification and hardening (2026-09-26)
+
+**Clean run**
+- From a fresh clone, with an empty data directory and no virtual environment, `make run-all && make pack`
+  succeeded as one command, with no manual steps, in 56.8 seconds. That includes creating the virtual
+  environment and installing every dependency, which took 17.8 seconds when measured on its own in a second
+  clone. With the environment in place, the same command took 21.8 seconds. `make pack` alone, in the
+  second fresh clone, took 17.8 seconds to install and 27.0 to build. The clone's PDF and all 13 figures were
+  byte-identical to this repository's, and the run left the clone's committed files unchanged.
+- **Fixed:** every target called pip on every run, so nothing ran without a network connection. Dependencies
+  are now installed once into `.venv`, and again only when `pyproject.toml` changes; after that every
+  target runs offline.
+- **Fixed:** `make` now finds a Python 3.11 or later interpreter on the PATH, and stops with a clear message
+  if there is none, rather than failing inside the virtual environment step.
+- `make run-all && make pack` runs the pipeline twice, because the pack always rebuilds from a clean run so
+  that it cannot lag the data. `make pack` alone does everything.
+
+**The defect register as the expected set**
+- `tests/test_defects.py` (17 tests) reads `data/raw/DEFECTS.md`, checks it against `defects.json`, and
+  asserts that each quality rule and reconciliation engine flags exactly the planted records. A planted
+  defect that is missed fails, and so does anything flagged that was not planted. Every rule that claims a
+  defect must detect it; a rule that claims none must raise no failures; together the rules cover every
+  defect but 12, which the job cost engine detects and the test checks by its mechanism.
+- **The register was incomplete, and in one place wrong.** It gave the stock count denominator as 74
+  counted lines; 106 were counted, because the 18 legacy-code and 14 consumable lines were counted too.
+  Seeded conditions it did not record have been added: receipts with no invoice, split into overdue and not
+  yet due; short deliveries, by size; invoices with no PO, split into services and overheads; blank cells;
+  dates not in the UK house format. Three defects the generator planted but never registered are now
+  defects 11 (housekeeping lapses), 12 (steel charged in full to the ordering job) and 13 (events dated
+  after the extract). Only the register changed: all 13 source files are byte-identical.
+- **Planted but not detected, now fixed:**
+  1. The three-way match allowed a £50 floor on the price tolerance, which hid 5 planted overcharges. The
+     tolerance is now 5% of what was received, as rule DQ-14 uses. Price variances: 48 became 53.
+  2. Deliveries exactly 2% short were flagged, because of floating-point error at the boundary. Quantity
+     variances: 377 became 373.
+  3. DQ-22 checked 3 of the 6 date columns and missed 745 planted dates in the wrong format.
+  4. DQ-33 missed a works order exactly 30 days past its planned finish, an off-by-one error.
+  5. DQ-07 missed a duplicate supplier that scores below the automatic match floor but that invoices
+     corroborate.
+  6. Blank delivery vehicles and blank NCR costs had no rule; DQ-39 and DQ-40 added.
+  7. DQ-06 claimed defect 4 but detected nothing; the claim is removed.
+  8. Events dated after the extract had no rule; DQ-35 to DQ-38 added.
+- Seven of the fixes were reverted one at a time, and the suite failed each time.
+- There are now 40 rules, up from 34. The data quality index is 92.2, up from 92.1: 7 rules met and 4
+  critical breaches. Value at risk is £4.31m, down from £4.32m. The committed reports, process maps and
+  diagrams were regenerated, and the figures in the benefits case, risk register and rollout plan updated.
+  The benefits in pounds are unchanged.
+
+**Coverage**
+- 201 tests pass. `make coverage` gives 92.3% line and branch coverage. The lowest modules:
+  `design/render.py` at 31%, most of it the call to the external diagram renderer;
+  `app/views/performance.py` at 42%; and the pipelines' command-line entry points at 70 to 78%.
+  `audit.py` is at 90% and `provenance.py` at 91%.
+
+**Traceability audit**
+- `make audit` rebuilds the pack, then traces every number in it and on the app's Overview page.
+  `src/fabsync/provenance.py` makes every figure the code prints a traced value, which records, as it is
+  formatted, the query, setting or document it came from. The audit reads every number back out of what a
+  reader sees: the PDF text, the text drawn in each chart and diagram, and the rendered Overview page. It
+  then pairs each number with the entry recorded for it, within the same chart, section of the pack or
+  page, in the order written.
+- **Result:** 921 numbers, 0 untraced. 400 are warehouse queries, 127 config settings and 107 committed
+  documents. 4 are the one scenario fact, the year Corvus was installed. 283 are structure, such as page
+  numbers, identifiers and scales. `docs/traceability-audit.md` lists them all, with the SQL of every
+  query cited.
+- **Control build:** the pack and page were built again from a warehouse generated from another seed. All
+  886 numbers that could be paired cite the same source in both builds. Two charts were not paired,
+  because their control has a different number of rows.
+- **Typed numbers found and removed:**
+  - A false claim that one steel is "coded four ways"; the data shows at most three.
+  - The stock target, the severity weights, the plan length, a page reference, two chart titles' row
+    counts, and the counts of KPIs, data owners, systems, first-phase months and KPIs off target.
+  - The month in a benefits table heading.
+  - The finance code of the example job, typed in five places across the pack, diagrams and app.
+  - "Three units of measure" in a process map.
+  - "Three date formats" in a diagram, now worded without a count.
+- **The first matcher was wrong.** Pairing numbers by their digits alone balanced the counts but could
+  cite the wrong query; for example, a chart title's 15 was cited to the £15k stock error. It was replaced
+  by pairing in order within each chart and section, and the control build now proves the pairing.
+- **Numbers not traced to a warehouse query** are listed in the report:
+  - config targets, tolerances, ageing buckets, plan timings and risk scores;
+  - the benefits case figures, which come from the committed document, whose own tests recompute its
+    baselines from the warehouse;
+  - two KPI caveats that describe the data in words: about 4% of delivery notes have no promised date,
+    and about a third of stock lines were counted more than 90 days ago. A test now checks both (4.2% and
+    38%).
+- `tests/test_audit.py` (11 tests) runs the full audit with a control. It requires:
+  - no untraced number;
+  - the same sources in the control build;
+  - that the committed report is current;
+  - that a number typed by hand is caught;
+  - that the caveat claims hold;
+  - that the heat map's risk bands match the register.
+
+**Naming sweep**
+- Searched:
+  - the content of every file on disk, tracked, untracked and ignored, with the virtual environment
+    counted separately;
+  - every file and directory name, and every path ever committed;
+  - every ref, and all 12 commit messages with their author and committer;
+  - the contents of every revision;
+  - the reflog, the stashes and the unreachable objects;
+  - the metadata of every PNG and of the PDF.
+- The commands and their output were reported to the owner. They are not repeated here, because the search
+  terms themselves would put the names into the repository.
+- **Tracked content, names and messages:** nothing found in tracked content, file names, commit messages
+  or binary metadata. The only matches are the house rules and the trailer-stripping commit hook, which
+  use generic words.
+- **Ignored local directory:** a tool-settings directory at the repository root is ignored and has never
+  been committed.
+- **History:** the first commit's `.gitignore` named that directory, and the second commit replaced it with
+  a generic rule. Removing the name from history needs a rewrite of every commit, which awaits the owner's
+  decision. Two unreachable commits, still held by the reflog, carry the same line.
+
+**README**
+- Rewritten. It covers:
+  - what FabSync is and the business problem;
+  - how to run it in under two minutes;
+  - that all the data is synthetic, and how it is generated;
+  - what is deliberately out of scope;
+  - the assumptions.
+
+**Known limitations**
+- **Defect 12** is detected in aggregate, not job by job. Cutting whole bars leaves offcut, so the kilogram
+  gap on a single job is not exact. The test checks the mechanism instead.
+- **DQ-09**, supplier duplicates, is a fuzzy match; its test checks precision and recall against the
+  register.
+- **DQ-34**, NCRs closed within 60 days, cannot see the 2 overdue NCRs quarantined as unreadable. The test
+  checks that they are held in quarantine.
+- **Pages not printed:** the pack has not been printed on paper.
+
+**Next**
+- None set.
+
 ## Mission 10: Management pack (2026-09-26)
 
 **Done**

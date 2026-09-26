@@ -23,6 +23,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from fabsync import provenance
 from fabsync.palette import ACCENT, GRID, INK, MUTED, RULE, SYSTEM_COLOURS, SYSTEM_LABELS  # noqa: F401
 
 DEFAULT_WAREHOUSE = Path("data/warehouse/fabsync.duckdb")
@@ -63,7 +64,9 @@ def _query(sql: str, params: tuple, path: str, mtime: float) -> pd.DataFrame:
 def q(sql: str, params: list | tuple = ()) -> pd.DataFrame:
     """Run a read-only query, cached until the warehouse file changes."""
     path = warehouse()
-    return _query(sql, tuple(params), str(path), path.stat().st_mtime if path.exists() else 0.0)
+    frame = _query(sql, tuple(params), str(path), path.stat().st_mtime if path.exists() else 0.0)
+    # During a traceability audit every number the app shows carries the query it came from.
+    return provenance.trace_frame(frame, "app query", sql) if provenance.active() and len(frame.columns) else frame
 
 
 def scalar(sql: str, params: list | tuple = ()):
@@ -95,7 +98,7 @@ def gbp(v, dp: int = 0) -> str:
 def fmt(v, unit: str) -> str:
     if v is None or pd.isna(v):
         return "no data"
-    return {"GBP": gbp(v), "percent": f"{v:.1f}%", "count": f"{int(v):,}", "tonnes": f"{v:,.1f} t",
+    return {"GBP": gbp(v), "percent": f"{v:.1f}%", "count": f"{v:,.0f}", "tonnes": f"{v:,.1f} t",
             "kg": f"{v:,.0f} kg", "hours": f"{v:,.0f} h", "index": f"{v:.1f}"}.get(unit, f"{v:,}")
 
 

@@ -175,7 +175,6 @@ rules:
     threshold: 1.0
     consequence: A plate issued in metres or a bolt ordered in kilograms produces nonsense quantities and costs on the job.
     corrective_action: Correct the unit on the transaction and check the quantity was entered in that unit.
-    covers_defects: [4]
     check:
       sql: |
         WITH t AS (
@@ -216,7 +215,14 @@ rules:
         WITH e AS (SELECT supplier_id, count(*) FILTER (WHERE source_system = 'corvus_mrp') AS codes
                    FROM core.supplier_xref GROUP BY 1),
              corroborated AS (SELECT unnest(string_split(left_members || ', ' || right_members, ', ')) AS k
-                              FROM core.supplier_review_queue WHERE evidence_pos > 0)
+                              FROM core.supplier_review_queue WHERE evidence_pos > 0
+                              UNION
+                              -- scored below the review floor, but the invoices say it is the same supplier
+                              SELECT 'corvus_mrp:' || m.source_code
+                              FROM core.supplier_candidate_pairs c
+                              JOIN core.supplier_xref r ON r.source_system || ':' || r.source_code IN (c.left_key, c.right_key)
+                              JOIN core.supplier_xref m ON m.supplier_id = r.supplier_id AND m.source_system = 'corvus_mrp'
+                              WHERE c.status = 'unmatched' AND c.cross_system AND c.evidence_pos > 0)
         SELECT x.source_code AS record_key,
                NOT (e.codes > 1 OR 'corvus_mrp:' || x.source_code IN (SELECT k FROM corroborated)) AS passed,
                x.source_name || ' = ' || g.canonical_name || ' (' || g.corvus_codes || ')' AS observed
@@ -432,6 +438,7 @@ rules:
     threshold: 0.9
     consequence: Old counts hide losses and unreturned offcuts. The longer the gap, the bigger the surprise at year end.
     corrective_action: Add the line to this week's cycle count.
+    covers_defects: [11]
     check:
       sql: |
         SELECT trim(material_code) || '|' || site || '|' || trim(location) AS record_key,
@@ -522,20 +529,35 @@ rules:
     covers_defects: [9]
     check:
       sql: |
-        SELECT _source_file || ':' || _source_row AS record_key,
+        SELECT _source_file || ':' || _source_row || ':booking_date' AS record_key,
                regexp_matches(trim(booking_date), '^\d{2}/\d{2}/\d{4}$') AS passed, booking_date AS observed,
                _source_file AS source_file, _source_row AS source_row
         FROM raw.shop_floor_time_bookings WHERE trim(booking_date) <> ''
         UNION ALL
-        SELECT _source_file || ':' || _source_row, regexp_matches(trim(despatch_date), '^\d{2}/\d{2}/\d{4}$'),
-               despatch_date, _source_file, _source_row
+        SELECT _source_file || ':' || _source_row || ':despatch_date' AS record_key,
+               regexp_matches(trim(despatch_date), '^\d{2}/\d{2}/\d{4}$') AS passed, despatch_date AS observed,
+               _source_file AS source_file, _source_row AS source_row
         FROM raw.shop_floor_delivery_notes WHERE trim(despatch_date) <> ''
         UNION ALL
-        SELECT _source_file || ':' || _source_row, regexp_matches(trim(raised_date), '^\d{2}/\d{2}/\d{4}$'),
-               raised_date, _source_file, _source_row
+        SELECT _source_file || ':' || _source_row || ':promised_date' AS record_key,
+               regexp_matches(trim(promised_date), '^\d{2}/\d{2}/\d{4}$') AS passed, promised_date AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM raw.shop_floor_delivery_notes WHERE trim(promised_date) <> ''
+        UNION ALL
+        SELECT _source_file || ':' || _source_row || ':raised_date' AS record_key,
+               regexp_matches(trim(raised_date), '^\d{2}/\d{2}/\d{4}$') AS passed, raised_date AS observed,
+               _source_file AS source_file, _source_row AS source_row
         FROM raw.shop_floor_ncr_log WHERE trim(raised_date) <> ''
-
-  # ---- Referential integrity ---------------------------------------------------
+        UNION ALL
+        SELECT _source_file || ':' || _source_row || ':closed_date' AS record_key,
+               regexp_matches(trim(closed_date), '^\d{2}/\d{2}/\d{4}$') AS passed, closed_date AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM raw.shop_floor_ncr_log WHERE trim(closed_date) <> ''
+        UNION ALL
+        SELECT _source_file || ':' || _source_row || ':week_commencing' AS record_key,
+               regexp_matches(trim(week_commencing), '^\d{2}/\d{2}/\d{4}$') AS passed, week_commencing AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM raw.shop_floor_weekly_capacity WHERE trim(week_commencing) <> ''
 
   - id: DQ-23
     name: Time bookings against a real works order
@@ -616,6 +638,7 @@ rules:
     threshold: 0.99
     consequence: Welding cannot be tied to a qualified welder for EN ISO 9606 records, and productivity by operator cannot be measured.
     corrective_action: Ask the supervisor to complete the operator from the clock card.
+    covers_defects: [9]
     check:
       sql: |
         SELECT CAST(booking_id AS VARCHAR) AS record_key, operator IS NOT NULL AS passed,
@@ -633,6 +656,7 @@ rules:
     threshold: 0.99
     consequence: Hours cannot be compared with the routing, so bottlenecks at welding or blasting are invisible.
     corrective_action: Complete the operation from the supervisor's day sheet.
+    covers_defects: [9]
     check:
       sql: |
         SELECT CAST(booking_id AS VARCHAR) AS record_key, operation IS NOT NULL AS passed,
@@ -650,6 +674,7 @@ rules:
     threshold: 1.0
     consequence: On-time-in-full (OTIF) cannot be measured for that despatch, which is the headline customer measure.
     corrective_action: Take the promised date from the works order or the customer programme and add it to the delivery note.
+    covers_defects: [9]
     check:
       sql: |
         SELECT dn_no AS record_key, promised_date IS NOT NULL AS passed,
@@ -667,6 +692,7 @@ rules:
     threshold: 0.99
     consequence: Tonnage despatched, the headline throughput figure, is understated, and haulage cannot be checked against the load.
     corrective_action: Take the tonnage from the works order weight schedule.
+    covers_defects: [9]
     check:
       sql: |
         SELECT dn_no AS record_key, tonnage IS NOT NULL AS passed, job || ' ' || coalesce(vehicle, '') AS observed,
@@ -731,13 +757,14 @@ rules:
     threshold: 0.95
     consequence: Open works orders keep material and labour in WIP long after the work has gone, which overstates WIP and hides overruns.
     corrective_action: Confirm the work is despatched, book any remaining hours, and close the works order.
+    covers_defects: [11]
     check:
       sql: |
         SELECT CAST(wo_no AS VARCHAR) AS record_key, status IN ('COMPLETE', 'CLOSED') AS passed,
                job_no || ' ' || status || ', planned finish ' || strftime(planned_finish, '%d/%m/%Y') AS observed,
                _source_file AS source_file, _source_row AS source_row
         FROM core.works_orders
-        WHERE status <> 'CANCELLED' AND planned_finish <= DATE '${as_of_date}' - ${works_order_close_days}
+        WHERE status <> 'CANCELLED' AND planned_finish < DATE '${as_of_date}' - ${works_order_close_days}
 
   - id: DQ-34
     name: NCRs closed within 60 days
@@ -749,6 +776,7 @@ rules:
     threshold: 0.9
     consequence: Open NCRs mean suspect steelwork may already be on site. They are also an EN 1090 audit finding and a sign that root causes are not being fixed.
     corrective_action: Agree the disposition (rework, use as is, or scrap), record the corrective action, and close the NCR.
+    covers_defects: [11]
     check:
       sql: |
         SELECT ncr_no AS record_key,
@@ -758,3 +786,119 @@ rules:
                _source_file AS source_file, _source_row AS source_row
         FROM staging.shop_floor_ncr_log
         WHERE raised_date <= DATE '${as_of_date}' - ${ncr_close_days}
+
+  - id: DQ-35
+    name: Purchase orders not dated after the extract
+    description: No purchase order carries an order date later than the date the extract was taken.
+    dimension: validity
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Purchasing Manager
+    threshold: 1.0
+    consequence: An order dated in the future is a keying error. It lands in the wrong month, so spend, commitments and the three-way match are reported in the wrong period.
+    corrective_action: Correct the order date against the buyer's copy of the order.
+    covers_defects: [13]
+    check:
+      sql: |
+        SELECT po_no AS record_key, order_date <= DATE '${as_of_date}' AS passed,
+               'ordered ' || strftime(order_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_purchase_orders
+
+  - id: DQ-36
+    name: Works orders not finished after the extract
+    description: No works order records an actual finish later than the date the extract was taken.
+    dimension: validity
+    severity: medium
+    system_of_record: corvus_mrp
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Work booked as finished before it is finished drops out of WIP and appears ready to despatch, so delivery promises and job margins are wrong.
+    corrective_action: Correct or clear the finish date and reopen the works order until the work is done.
+    covers_defects: [13]
+    check:
+      sql: |
+        SELECT CAST(wo_no AS VARCHAR) AS record_key, coalesce(actual_finish <= DATE '${as_of_date}', true) AS passed,
+               'finished ' || coalesce(strftime(actual_finish, '%d/%m/%Y'), '-') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.corvus_mrp_works_orders
+
+  - id: DQ-37
+    name: Invoices not dated after the extract
+    description: No supplier or sales invoice carries a date later than the date the extract was taken.
+    dimension: validity
+    severity: medium
+    system_of_record: finance
+    owner: Finance Manager
+    threshold: 1.0
+    consequence: A future-dated invoice is posted to a period that has not happened, so the month's costs, accruals and turnover are wrong and the invoice may be paid early.
+    corrective_action: Check the invoice date against the document and repost it to the right period.
+    covers_defects: [13]
+    check:
+      sql: |
+        SELECT invoice_no AS record_key, invoice_date <= DATE '${as_of_date}' AS passed,
+               'supplier invoice dated ' || strftime(invoice_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.finance_purchase_invoices
+        UNION ALL
+        SELECT invoice_no, invoice_date <= DATE '${as_of_date}',
+               'sales invoice dated ' || strftime(invoice_date, '%d/%m/%Y'), _source_file, _source_row
+        FROM staging.finance_sales_invoices
+
+  - id: DQ-38
+    name: Shop-floor records not dated after the extract
+    description: No time booking or delivery note carries a date later than the date the extract was taken.
+    dimension: validity
+    severity: medium
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 1.0
+    consequence: Hours booked or steel despatched on a date that has not happened distort labour, capacity and on-time delivery for the period.
+    corrective_action: Ask the supervisor for the date the work was done and correct the entry.
+    covers_defects: [13]
+    check:
+      sql: |
+        SELECT CAST(booking_id AS VARCHAR) AS record_key, booking_date <= DATE '${as_of_date}' AS passed,
+               'booked ' || strftime(booking_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_time_bookings
+        UNION ALL
+        SELECT dn_no, despatch_date <= DATE '${as_of_date}',
+               'despatched ' || strftime(despatch_date, '%d/%m/%Y'), _source_file, _source_row
+        FROM staging.shop_floor_delivery_notes
+
+  - id: DQ-39
+    name: Cost entered on every NCR
+    description: Every non-conformance report records what putting the defect right cost.
+    dimension: completeness
+    severity: medium
+    system_of_record: shop_floor
+    owner: Quality Manager
+    threshold: 0.95
+    consequence: An NCR with no cost counts as nil, so the cost of quality is understated and the defects that cost most cannot be ranked.
+    corrective_action: Estimate the rework hours, material and haulage from the job file and enter the cost.
+    covers_defects: [9]
+    check:
+      sql: |
+        SELECT ncr_no AS record_key, cost_impact IS NOT NULL AS passed,
+               category || ', raised ' || strftime(raised_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_ncr_log
+
+  - id: DQ-40
+    name: Vehicle recorded on every delivery note
+    description: Every delivery note records the vehicle that carried the load.
+    dimension: completeness
+    severity: low
+    system_of_record: shop_floor
+    owner: Production Controller
+    threshold: 0.99
+    consequence: The haulier's charges cannot be checked against the loads, and a load cannot be traced to its vehicle if it arrives damaged or incomplete.
+    corrective_action: Take the registration from the haulier's docket and add it to the delivery note.
+    covers_defects: [9]
+    check:
+      sql: |
+        SELECT dn_no AS record_key, vehicle IS NOT NULL AS passed,
+               job || ', despatched ' || strftime(despatch_date, '%d/%m/%Y') AS observed,
+               _source_file AS source_file, _source_row AS source_row
+        FROM staging.shop_floor_delivery_notes

@@ -5,8 +5,8 @@ labour_rate = 38.0          # standard labour rate, pounds per hour
 
 [three_way]
 qty_tolerance = 0.02        # received quantity may differ from ordered by this share
-price_tolerance_pct = 0.05  # invoice may differ from expected by the greater of this share...
-price_tolerance_abs = 50.0  # ...or this many pounds
+price_tolerance_pct = 0.05  # invoice may differ from received quantity x PO price by this share; the same
+                            # 5% as rule DQ-14, so the match and the rule count the same overcharges
 receipt_grace_days = 5      # a PO is not overdue for receipt until this many days after its promised date
 invoice_grace_days = 30     # a receipt is not overdue for invoice until this many days after receipt
 # Nominal codes where spend without a purchase order is permitted (overheads).

@@ -8,7 +8,7 @@ in exactly one category, tested in this order:
 * not yet due: ordered but not yet due for receipt, or received but not yet
   due for invoice. Not an exception, but shown so every line is accounted for.
 * price variance: invoiced amount differs from received quantity x PO price by
-  more than the greater of the percentage and absolute tolerance
+  more than the percentage tolerance, the same 5% the data quality rule applies
 * quantity variance: received quantity differs from ordered by more than the
   quantity tolerance
 * matched: none of the above
@@ -72,6 +72,12 @@ ORDER BY i.invoice_date, i.invoice_no
 """
 
 
+
+def beyond(variance: float, tolerance: float) -> bool:
+    """True if the variance exceeds the tolerance. A variance exactly on the tolerance is within it: quantities and
+    prices carry float rounding noise, so without the margin a delivery exactly 2% short could fall either side."""
+    return abs(variance) > tolerance + 1e-9 * max(1.0, abs(tolerance))
+
 def classify(r, cfg: dict) -> dict:
     tw, as_of = cfg["three_way"], pd.Timestamp(cfg["as_of"])
     out = {"expected_invoice": None, "qty_variance": None, "price_variance": None, "price_tolerance": None,
@@ -95,13 +101,13 @@ def classify(r, cfg: dict) -> dict:
                 "exception_date": r.received_date,
                 "reason": f"received {r.received_date:%d/%m/%Y}, not invoiced; £{received_value:,.2f} unaccrued"}
     price_var = r.invoiced - received_value
-    tolerance = max(tw["price_tolerance_pct"] * received_value, tw["price_tolerance_abs"])
+    tolerance = tw["price_tolerance_pct"] * received_value
     out.update(price_variance=price_var, price_tolerance=tolerance, exception_date=r.invoice_date)
-    if abs(price_var) > tolerance:
+    if beyond(price_var, tolerance):
         return {**out, "category": "price variance", "value_at_risk": abs(price_var),
                 "reason": f"invoiced £{r.invoiced:,.2f} against £{received_value:,.2f} expected "
                           f"({price_var:+,.2f}); tolerance £{tolerance:,.2f}"}
-    if abs(qty_var) > tw["qty_tolerance"] * r.qty_ordered:
+    if beyond(qty_var, tw["qty_tolerance"] * r.qty_ordered):
         return {**out, "category": "quantity variance", "value_at_risk": abs(qty_var) * r.unit_price,
                 "reason": f"ordered {r.qty_ordered:g}, received {r.qty_received:g} {r.uom} "
                           f"({qty_var / r.qty_ordered:+.1%}); tolerance {tw['qty_tolerance']:.0%}"}

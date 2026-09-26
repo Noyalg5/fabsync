@@ -68,7 +68,7 @@ TERMS = [
     Term("first_in", r"(?i)first-in first-out", "first-in first-out",
          "each works order is assumed to have used the oldest delivery still in stock"),
     Term("kpi", r"\bKPIs?\b", "key performance indicator (KPI)",
-         "one of the nine measures management runs the business on"),
+         "one of the measures management runs the business on"),
     Term("otif", r"\bOTIF\b", "OTIF", "on time, in full: deliveries made by the promised date with everything "
                                       "on the lorry"),
     Term("wip", r"\bWIP\b", "work in progress (WIP)", "work started on the shop floor but not yet delivered"),
@@ -106,8 +106,7 @@ TERMS = [
     Term("dual", r"(?i)dual running|parallel run", "dual running",
          "doing a job the old way and the new way at once until the new way is proven"),
     Term("committee", r"(?i)management committee", "management committee",
-         "the Managing Director, the programme sponsor and the four data owners, meeting at the end of each "
-         "quarter"),
+         "the Managing Director, the programme sponsor and the data owners, meeting at the end of each quarter"),
     Term("inherent", r"(?i)\binherent\b", "inherent score",
          "likelihood times impact, each scored from 1 to 5, before any mitigation"),
     Term("residual", r"(?i)\bresidual\b", "residual score", "the same score once the mitigation is working"),

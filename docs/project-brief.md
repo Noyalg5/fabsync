@@ -52,16 +52,18 @@ source of project context is this file.
 | `src/fabsync/design/` | Diagram figures and renderer: fills `docs/diagrams/templates/` with measured figures |
 | `src/fabsync/pack/` | Management pack: `facts.py` gathers every figure, `charts.py` and `diagrams.py` draw at 300 dpi, `terms.py` the glossary, `document.py` the pages, `build.py` orchestrates |
 | `src/fabsync/palette.py` | Colour semantics shared by the app and the pack |
+| `src/fabsync/provenance.py` | Traced values: during an audit every printed figure records the query, setting or document it came from |
+| `src/fabsync/audit.py` | Traceability audit: reads every number back out of the pack and the Overview page and pairs it with its source; writes `docs/traceability-audit.md` |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
 | `config/` | `roadmap.yaml` phases, management committee reviews, risks, training and data domains, mirroring the planning documents; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
 | `data/raw/` | Generated source extracts, one folder per system: `corvus_mrp/`, `finance/`, `shop_floor/`, plus `DEFECTS.md` and `defects.json` (not committed) |
 | `data/warehouse/` | `fabsync.duckdb`, rebuilt from empty by `make ingest` (not committed) |
 | `docs/` | This brief, progress log, `lineage-and-quarantine.md`, generated `profiling-report.md`, `match-quality-report.md`, `dq-scorecard.md`, `reconciliation-report.md`, `data-dictionary.md` and `kpi-report.md`; design documents; planning documents `rollout-plan.md`, `risk-register.md`, `training-plan.md` and `benefits-case.md` |
-| `tests/` | pytest suite |
+| `tests/` | pytest suite; `test_defects.py` reads the defect register as the expected set, `test_audit.py` runs the traceability audit |
 | `export/` | `build_pack.py` (committed), the entry point for `make pack`; the PDF, `figures/` and demo bundle it writes (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `test`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `audit`, `test`, `coverage`, `clean`.
 
 ## The three source systems
 
@@ -122,10 +124,11 @@ Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `dia
 ## Synthetic source generation
 
 `make generate` runs `fabsync.ingest.generate_sources` (seed 1090, 24 months to
-2026-08-31) and rebuilds `data/raw/` in about a second. The ten seeded defects
-and the exact identifiers they touch are written to `data/raw/defects.json`;
-`tests/test_generate_sources.py` asserts each one is present. Later stages must
-detect them, and their tests should read the same manifest.
+2026-08-31) and rebuilds `data/raw/` in about a second. The 13 registered defects
+and the exact identifiers they touch are written to `data/raw/DEFECTS.md` and
+`data/raw/defects.json`; `tests/test_generate_sources.py` asserts each one is
+present, and `tests/test_defects.py` reads `DEFECTS.md` as the expected set and
+fails if any stage misses a planted defect or flags one that was not planted.
 
 | # | Defect | Where |
 | --- | --- | --- |
@@ -136,9 +139,12 @@ detect them, and their tests should read the same manifest.
 | 5 | Three-way match failures | Corvus POs and GRNs, finance purchase invoices |
 | 6 | Traceability gaps, ~18% GRNs without heat or cert | Corvus GRNs |
 | 7 | Labour variance | Shop-floor time bookings, finance job costs |
-| 8 | Stock accuracy, ~15% of lines | Corvus stock |
+| 8 | Stock accuracy, 11 of 106 counted lines | Corvus stock |
 | 9 | Structural noise | Duplicates, padding, mixed dates, numbers as text |
 | 10 | Orphan works orders | Shop-floor time bookings |
+| 11 | Housekeeping lapses: works orders left open, stale stock counts, NCRs never closed | Corvus works orders and stock, NCR log |
+| 12 | Steel charged in full to the ordering job when one order feeds several | Corvus POs and BOMs, finance job costs |
+| 13 | Events dated after the extract date | Corvus POs and works orders, finance invoices, time bookings |
 
 ## Warehouse, lineage and quarantine
 

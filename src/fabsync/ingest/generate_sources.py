@@ -28,9 +28,10 @@ import csv
 import json
 import math
 import random
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 DEFAULT_SEED = 1090
@@ -367,6 +368,7 @@ def fmt_fin(d: date | None) -> str:
 
 
 OPS_DATE_FORMATS = ["%d/%m/%Y", "%Y-%m-%d", "%d-%b-%y"]
+UK_DATE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 BOOKING_COLUMNS = ["booking_id", "operator", "works_order", "operation", "hours", "booking_date", "site"]
 
 
@@ -601,6 +603,7 @@ class PurchaseOrder:
     order_date: date
     promised_date: date
     job: Job
+    jobs_fed: tuple[str, ...] = ()   # every job whose works orders draw on this order
 
     @property
     def value(self) -> float:
@@ -856,7 +859,8 @@ class SourceGenerator:
             if material.drift and rng.random() < 0.35:
                 written = rng.choice(material.code_variants()[1:])
             pos.append(PurchaseOrder(f"PO{po_no}", supplier, mrp_code, mrp_name, material, written,
-                                     qty_base, uom, qty, price, order_date, promised, top_job))
+                                     qty_base, uom, qty, price, order_date, promised, top_job,
+                                     tuple(sorted(job_demand))))
 
         grns: list[GoodsReceipt] = []
         grn_no = 88_410
@@ -1313,6 +1317,7 @@ class SourceGenerator:
         dup_dns = self.duplicate_rows(dn_rows, 0.01)
 
         ncr_rows = []
+        ncr_facts: list[tuple[str, date, date | None]] = []
         ncr_pool = [wo for wo in wos if wo.actual_hours > 0]
         cats = [c for c in NCR_CATEGORIES for _ in range(c[1])]
         ncr_no = 1_040
@@ -1333,6 +1338,7 @@ class SourceGenerator:
                              template.format(r=rng.choice("ABC"), r2=rng.choice("CDE"), mark=wo.part_code,
                                              mm=rng.choice([3, 5, 8, 12, 20])),
                              cost_text, fmt_ops(rng, closed)])
+            ncr_facts.append((f"NCR-{ncr_no}", raised, closed))
         ncr_rows.sort(key=lambda r: r[0])
         dup_ncrs = self.duplicate_rows(ncr_rows, 0.016)
         entry_errors = self.inject_entry_errors(booking_rows, dn_rows, ncr_rows)
@@ -1417,7 +1423,10 @@ class SourceGenerator:
             "file": "corvus_mrp/stock.csv",
             "lines_with_count_variance": stock_variance,
             "count": len(stock_variance),
-            "total_counted_lines": len(stock_rows) - len(stock_legacy) - len(CONSUMABLES) * len(SITES),
+            "total_counted_lines": len(stock_rows),
+            "steel_lines_under_current_codes": len(stock_rows) - len(stock_legacy) - len(CONSUMABLES) * len(SITES),
+            "legacy_code_lines": len(stock_legacy),
+            "consumable_lines": len(CONSUMABLES) * len(SITES),
         }
         defects["9_structural_noise"] = {
             "duplicate_rows": {"shop_floor/time_bookings.csv": dup_bookings,
@@ -1431,6 +1440,81 @@ class SourceGenerator:
             "blank_cells": "shop_floor operator, operation, promised_date, tonnage, vehicle, closed_date",
             "entry_errors": entry_errors,
             "entry_error_count": len(entry_errors),
+        }
+        # Everything else the files contain, registered exactly. Computed from the objects and rows already
+        # written, with no random draws, so registering it cannot change the data.
+        invoice_lag = timedelta(days=30)  # suppliers invoice 3 to 30 days after delivery (purchase invoices above)
+        received_on = {g.grn_no: g.received_date for g in grns}
+        defects["5_three_way_match"].update({
+            "grn_without_invoice_overdue": sorted(g for g in grn_without_invoice
+                                                  if received_on[g] <= AS_OF - invoice_lag),
+            "grn_without_invoice_within_invoicing_window": sorted(g for g in grn_without_invoice
+                                                                  if received_on[g] > AS_OF - invoice_lag),
+            "short_deliveries": [{"po_no": g.po.po_no, "grn_no": g.grn_no,
+                                  "received_share": round(g.qty_base / g.po.qty_base, 2)}
+                                 for g in grns if g.qty_base < g.po.qty_base],
+            "invoices_without_po": {
+                "services": sorted(r[0] for r in purchase_invoices if not r[3] and r[8] != "7000"),
+                "overheads": sorted(r[0] for r in purchase_invoices if not r[3] and r[8] == "7000"),
+            },
+        })
+
+        def blanks(rows: list[list], col: int) -> list[str]:
+            return sorted({str(r[0]) for r in rows if str(r[col]).strip() == ""})
+
+        def not_uk(rows: list[list], col: int) -> int:
+            return sum(1 for r in rows if str(r[col]).strip() and not UK_DATE.match(str(r[col]).strip()))
+
+        defects["9_structural_noise"].update({
+            "blank_cell_records": {
+                "shop_floor/time_bookings.csv": {"operator": blanks(booking_rows, 1),
+                                                 "operation": blanks(booking_rows, 3)},
+                "shop_floor/delivery_notes.csv": {"promised_date": blanks(dn_rows, 4), "tonnage": blanks(dn_rows, 5),
+                                                  "vehicle": blanks(dn_rows, 6)},
+                "shop_floor/ncr_log.csv": {"cost_impact": blanks(ncr_rows, 5), "closed_date": blanks(ncr_rows, 6)},
+            },
+            "dates_not_in_uk_format": {
+                "shop_floor/time_bookings.csv": {"booking_date": not_uk(booking_rows, 5)},
+                "shop_floor/delivery_notes.csv": {"despatch_date": not_uk(dn_rows, 3),
+                                                  "promised_date": not_uk(dn_rows, 4)},
+                "shop_floor/ncr_log.csv": {"raised_date": not_uk(ncr_rows, 2), "closed_date": not_uk(ncr_rows, 6)},
+                "shop_floor/weekly_capacity.csv": {"week_commencing": not_uk(cap_rows, 0)},
+            },
+        })
+        stock_counted = {f"{r[0].strip()}|{r[3]}|{r[2].strip()}": datetime.strptime(r[7], "%d/%m/%Y").date()
+                         for r in stock_rows}
+        open_wos = sorted(wo.wo_no for wo in wos if wo.status == "OPEN" and wo.actual_finish is None
+                          and wo.planned_finish + timedelta(days=30) < AS_OF)
+        stale_stock = sorted(k for k, d in stock_counted.items() if d < AS_OF - timedelta(days=90))
+        open_ncrs = sorted(n for n, raised, closed in ncr_facts
+                           if closed is None and raised <= AS_OF - timedelta(days=60))
+        defects["11_housekeeping_lapses"] = {
+            "files": ["corvus_mrp/works_orders.csv", "corvus_mrp/stock.csv", "shop_floor/ncr_log.csv"],
+            "works_orders_open_30_days_after_planned_finish": open_wos,
+            "stock_lines_not_counted_in_90_days": stale_stock,
+            "ncrs_open_more_than_60_days": open_ncrs,
+            "count": len(open_wos) + len(stale_stock) + len(open_ncrs),
+        }
+        shared = [{"po_no": po.po_no, "charged_to": po.job.job_no,
+                   "also_used_by": [j for j in po.jobs_fed if j != po.job.job_no]}
+                  for po in pos if len(po.jobs_fed) > 1]
+        defects["12_steel_charged_to_ordering_job"] = {
+            "files": ["corvus_mrp/purchase_orders.csv", "corvus_mrp/bom_lines.csv", "finance/purchase_invoices.csv",
+                      "finance/job_costs.csv"],
+            "purchase_orders": shared,
+            "count": len(shared),
+        }
+        future = {
+            "purchase_orders": sorted(po.po_no for po in pos if po.order_date > AS_OF),
+            "works_order_finish": sorted(wo.wo_no for wo in wos if wo.actual_finish and wo.actual_finish > AS_OF),
+            "purchase_invoices": sorted(r[0] for r in purchase_invoices if r[7] > AS_OF.isoformat()),
+            "time_bookings": sorted({b["booking_id"] for b in bookings if b["date"] > AS_OF}),
+        }
+        defects["13_dates_after_extract"] = {
+            "files": ["corvus_mrp/purchase_orders.csv", "corvus_mrp/works_orders.csv",
+                      "finance/purchase_invoices.csv", "shop_floor/time_bookings.csv"],
+            **future,
+            "count": sum(len(v) for v in future.values()),
         }
         self.manifest["row_counts"] = dict(self.counts)
         self.manifest["volumes"] = {
@@ -1517,6 +1601,9 @@ def render_defects_md(m: dict) -> str:
     stock = d["8_stock_accuracy"]
     noise = d["9_structural_noise"]
     orphans = d["10_orphans"]
+    house = d["11_housekeeping_lapses"]
+    steel = d["12_steel_charged_to_ordering_job"]
+    future = d["13_dates_after_extract"]
     lines += [
         "",
         "Detect by: fuzzy matching on normalised names (strip Ltd/Limited/Co, and/&, whitespace).",
@@ -1538,8 +1625,17 @@ def render_defects_md(m: dict) -> str:
         f"- POs with no goods receipt (past promised date): {twm['counts']['po_without_grn']}",
         f"- Goods receipts with no purchase invoice: {twm['counts']['grn_without_invoice']}",
         f"- Invoices exceeding PO value by more than 5%: {twm['counts']['invoice_over_po']}",
-        "",
-        "Subcontract, plant and overhead invoices carry no PO reference and are outside the match.",
+        f"- Of the receipts with no invoice, {len(twm['grn_without_invoice_overdue'])} were received more than 30 days "
+        "before the extract, longer than suppliers take to invoice, so the invoice is overdue; "
+        f"{len(twm['grn_without_invoice_within_invoicing_window'])} were received in the last 30 days and are not "
+        "yet due.",
+        f"- Short deliveries: {len(twm['short_deliveries'])} receipts brought in less than was ordered: "
+        + ", ".join(f"{sum(1 for x in twm['short_deliveries'] if x['received_share'] == share)} at "
+                    f"{1 - share:.0%} short"
+                    for share in sorted({x['received_share'] for x in twm['short_deliveries']}, reverse=True)) + ".",
+        f"- Invoices with no PO reference: {len(twm['invoices_without_po']['services'])} for subcontract, galvanising, "
+        f"paint, erection, profiling, inspection, plant, transport and consumables, which should carry one; and "
+        f"{len(twm['invoices_without_po']['overheads'])} overheads on nominal 7000, which need none.",
         "",
         "### 6. Traceability gaps",
         "",
@@ -1555,8 +1651,10 @@ def render_defects_md(m: dict) -> str:
         "",
         "### 8. Stock accuracy",
         "",
-        f"`counted_qty` differs from `qty_on_hand` on {stock['count']} of {stock['total_counted_lines']} "
-        "counted stock lines.",
+        f"`counted_qty` differs from `qty_on_hand` on {stock['count']} of the {stock['total_counted_lines']} counted "
+        f"stock lines. {stock['steel_lines_under_current_codes']} of those lines are steel under its current code; "
+        f"the {stock['legacy_code_lines']} legacy-code records and {stock['consumable_lines']} consumable lines were "
+        "counted too, and all agree with the book.",
         "",
         "### 9. Structural noise",
         "",
@@ -1564,7 +1662,12 @@ def render_defects_md(m: dict) -> str:
         f"- Trailing whitespace: {noise['trailing_whitespace']}",
         f"- Mixed date formats in shop-floor files: {', '.join(noise['mixed_date_formats']['shop_floor/*'])}",
         f"- Numeric fields stored as text: {noise['numeric_as_text']['finance/*']}",
-        f"- Blank cells: {noise['blank_cells']}",
+        "- Blank cells: " + "; ".join(
+            f"{file.split('/')[1]} {col.replace('_', ' ')} on {len(ids)} records"
+            for file, cols in noise["blank_cell_records"].items() for col, ids in cols.items()) + ".",
+        "- Dates not in the UK house format DD/MM/YYYY: " + "; ".join(
+            f"{file.split('/')[1]} {col.replace('_', ' ')} {n:,}"
+            for file, cols in noise["dates_not_in_uk_format"].items() for col, n in cols.items()) + ".",
         f"- Hand-typed values no parser should accept: {noise['entry_error_count']} "
         "(unparseable hours, tonnage and costs such as `7,5` and `4hrs`; impossible or placeholder dates such "
         "as `31/02/2025` and `TBC`; blank works orders; booking ids reused on an edited copy). Listed "
@@ -1575,6 +1678,28 @@ def render_defects_md(m: dict) -> str:
         f"{orphans['count']} works orders appear in time bookings but not in Corvus: "
         + ", ".join(str(n) for n in orphans["works_orders_in_bookings_not_in_mrp"]) + ".",
         "They are transposed digits of genuine works order numbers.",
+        "",
+        "### 11. Housekeeping lapses",
+        "",
+        f"- Works orders still open more than 30 days after their planned finish, never closed off: "
+        f"{len(house['works_orders_open_30_days_after_planned_finish'])}",
+        f"- Stock lines last counted more than 90 days before the extract: "
+        f"{len(house['stock_lines_not_counted_in_90_days'])}",
+        f"- NCRs raised more than 60 days before the extract and never closed: "
+        f"{len(house['ncrs_open_more_than_60_days'])}",
+        "",
+        "### 12. Steel charged to the ordering job",
+        "",
+        f"{steel['count']} purchase orders supply works orders on more than one job, but each is charged in full to "
+        "the job with the largest demand. The steel cost lands on one job and the others look cheap; totals "
+        "agree, job costs do not.",
+        "",
+        "### 13. Events dated after the extract date",
+        "",
+        f"The extract is dated {m['as_of']}, yet {future['count']} records are dated after it: "
+        f"{len(future['purchase_orders'])} purchase orders placed, {len(future['purchase_invoices'])} supplier "
+        f"invoices, {len(future['time_bookings'])} time bookings and {len(future['works_order_finish'])} works orders "
+        "finished. Promised and planned dates may lie in the future; events may not.",
         "",
     ]
     return "\n".join(lines)

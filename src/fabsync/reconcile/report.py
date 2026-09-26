@@ -88,8 +88,8 @@ def render_report(results: list[EngineResult], cfg: dict) -> str:
                                                                                                 ascending=False)
     out += ["", "## 1. Three-way match", "",
             f"Purchase order to goods received note to purchase invoice. Tolerances: quantity ±"
-            f"{twc['qty_tolerance']:.0%}; price the greater of {twc['price_tolerance_pct']:.0%} or "
-            f"£{twc['price_tolerance_abs']:,.0f}. Rows: `recon.three_way_lines`, one per PO line and per invoice "
+            f"{twc['qty_tolerance']:.0%}; price ±{twc['price_tolerance_pct']:.0%}. "
+            "Rows: `recon.three_way_lines`, one per PO line and per invoice "
             "with no PO, each with its category, value at risk, age and a one-line reason.", "",
             *headline_block(tw), "",
             *table(tw.summary, ["category", "lines", "value_at_risk", "oldest_days"],

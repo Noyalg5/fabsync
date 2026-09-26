@@ -119,7 +119,7 @@ deleted; it stays in the crosswalk beside the winner.
 | Works order | Drawing revision on a booking | Shop-floor entry, kept beside the works order | Where supervisors note a revision, it is evidence for NCRs and is kept, not discarded. |
 | Goods receipt | Heat number and certificate reference | The mill certificate itself, over anything typed | The certificate is the legal evidence; the typed value is a pointer to it. |
 | Goods receipt | Quantity received | Goods-in count, over the delivery ticket, over the order | What physically arrived is what is paid for; differences beyond 2% go to the buyer. |
-| Supplier invoice | Price | Purchase order price, within tolerance (the greater of 5% or £50) | Beyond tolerance, the invoice is held until the buyer agrees the difference. |
+| Supplier invoice | Price | Purchase order price, within a 5% tolerance | Beyond tolerance, the invoice is held until the buyer agrees the difference. The same 5% applies in the three-way match and the data quality rule, so both count the same overcharges. |
 | Job cost | Labour | Shop-floor bookings at the standard rate | The hours were worked on the floor; a payroll allocation that differs by more than 5% is corrected, not averaged. |
 | Job cost | Material | Corvus material issues, valued at the average price paid per kilogram | Steel belongs to the job it went into, not to the job the invoice happened to name. |
 | Stock | Quantity | Physical recount, once a second count confirms the first | One count can be wrong; two agreeing counts are posted as an adjustment with a reason. |

@@ -23,6 +23,7 @@ from matplotlib.patches import Rectangle  # noqa: E402
 from matplotlib.ticker import FuncFormatter  # noqa: E402
 
 from fabsync.palette import ACCENT, GRID, INK, MUTED, RULE  # noqa: E402
+from fabsync.provenance import quote  # noqa: E402
 
 DPI = 300
 WIDTH = 170 / 25.4                      # inches: the text width of an A4 page with 20 mm margins
@@ -116,7 +117,7 @@ def bar_h(title: str, categories: Sequence[str], values: Sequence[float], labels
 
 
 def timeline(title: str, rows: dict[str, list[str]]) -> Figure:
-    """The 18-month plan: phases as accent bars, dual running as grey bars, reviews as ink diamonds."""
+    """The rollout plan: phases as accent bars, dual running as grey bars, reviews as ink diamonds."""
     with plt.rc_context(STYLE):
         names = [name for name in rows if name != "Quarter"]
         n = len(names)
@@ -193,6 +194,8 @@ def heat_maps(title: str, risks: list[dict]) -> Figure:
             lo = BANDS[j - 1][0] + 1 if j else 1
             fig.patches.append(Rectangle(((x + 0.1) / WIDTH, y / height), 0.16 / WIDTH, 0.16 / height, facecolor=ACCENT,
                                          alpha=alpha, transform=fig.transFigure, figure=fig, linewidth=0))
-            fig.text((x + 0.3) / WIDTH, (y + 0.08) / height, f"{name}, {lo} to {hi}", fontsize=6.3, va="center")
+            fig.text((x + 0.3) / WIDTH, (y + 0.08) / height,
+                     quote(f"{name}, {lo} to {hi}", "document", "risk scoring bands (docs/risk-register.md)"),
+                     fontsize=6.3, va="center")
             x += 1.05
         return fig

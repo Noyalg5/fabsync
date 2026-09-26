@@ -1,8 +1,13 @@
 """Reconciliation: the four engines, each leading with its exposure and drilling to source rows."""
 
+import tomllib
+from pathlib import Path
+
 import streamlit as st
 
 from fabsync import ui
+
+TOLERANCES = tomllib.loads(Path("config/reconcile.toml").read_text(encoding="utf-8"))
 
 ui.title("Reconciliation", "Four reconciliations, each leading with what is at stake. Every figure is recomputed "
          "from the rows behind it before it is published, and every row traces to its source line.")
@@ -32,7 +37,9 @@ def lead(engine: str, note: str) -> None:
 tabs = st.tabs([TITLE[e] for e in LEAD])
 
 with tabs[0]:
-    lead("three_way", "Order to receipt to invoice, tolerances: quantity 2%, price the greater of 5% or £50")
+    tw = TOLERANCES["three_way"]
+    lead("three_way", f"Order to receipt to invoice, tolerances: quantity {tw['qty_tolerance']:.0%}, "
+                      f"price {tw['price_tolerance_pct']:.0%}")
     cats = ui.q("""SELECT category, count(*) AS lines, sum(value_at_risk) AS value_at_risk FROM recon.three_way_lines
                    WHERE is_exception GROUP BY 1""")
     cats["label"] = [f"{ui.gbp(v)}  ({n:,} lines)" for v, n in zip(cats.value_at_risk, cats.lines, strict=True)]

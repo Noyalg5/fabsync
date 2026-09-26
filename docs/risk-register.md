@@ -164,7 +164,7 @@ works orders. So an underestimate here delays every later phase at once.
 **What the prototype shows.** The match review queue is 93 decisions, estimated at 9.1 hours, using
 minutes per item that are assumptions. It is tempting to plan on that figure. The same synthetic data also
 holds 178 receipts whose certificates must be recovered and 246 order and receipt lines with no grade.
-There are 1,076 purchasing exceptions older than 90 days, 40 stock lines not counted for 90 days, and
+There are 1,074 purchasing exceptions older than 90 days, 40 stock lines not counted for 90 days, and
 65 works orders in WIP for more than 90 days. On top of that come 20 finance-only job codes and 5
 duplicate supplier entities, with 3 more likely. The prototype holds 47 materials and 63 supplier
 entities. A Corvus installed in 2006 will hold thousands of codes, including bolts, consumables and items

@@ -71,9 +71,9 @@ by eye that the order, the receipt and the invoice agree. This check is the **th
 | Services | Galvanising, paint, erection ordered by phone | Spend with no order to check the invoice against | 726 invoices, £3.41m |
 | Goods-in | Heat number and certificate typed from paper | Steel that cannot be traced to its certificate | 178 receipts; traceability coverage 68.7% |
 | Issue to job | Nothing recorded | Which steel went into which job can only be inferred | 148 despatched jobs exposed; £14.47m of sales on them |
-| Receipt | Short deliveries booked without challenge | Paying for steel not received, or not noticing it | 377 lines, £116k |
-| Invoice entry | Invoice typed against the order by hand | Overcharges paid | 48 price variances, £59k |
-| Three-way match | Done by eye, when there is time | Orders never received; receipts never invoiced | 82 orders, £304k committed; 66 receipts, £428k unaccrued; 1,076 older than 90 days |
+| Receipt | Short deliveries booked without challenge | Paying for steel not received, or not noticing it | 373 lines, £115k |
+| Invoice entry | Invoice typed against the order by hand | Overcharges paid | 53 price variances, £59k |
+| Three-way match | Done by eye, when there is time | Orders never received; receipts never invoiced | 82 orders, £304k committed; 66 receipts, £428k unaccrued; 1,074 older than 90 days |
 
 ## The target: one integrated ecosystem
 

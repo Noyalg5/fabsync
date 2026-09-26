@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import duckdb
 
+from fabsync.provenance import WORDS
+
 
 def money(v: float) -> str:
     if v >= 1_000_000:
@@ -34,6 +36,14 @@ def hours(v: float) -> str:
     return f"{v:,.0f} hours"
 
 
+def words(v: float) -> str:
+    return WORDS[int(round(v))]
+
+
+def code(v: float) -> str:
+    return f"{int(v)}"
+
+
 def headline(engine: str, key: str) -> str:
     return f"SELECT value FROM recon.headline WHERE engine = '{engine}' AND key = '{key}'"
 
@@ -53,6 +63,7 @@ FIGURES: dict[str, tuple[str, callable]] = {
     "over_90_days": (headline("three_way", "over_90_days"), count),
     "value_at_risk": (headline("three_way", "value_at_risk"), money),
     # job cost
+    "example_job_code": ("SELECT finance_job_code FROM core.job_crosswalk WHERE job_no = 'J-24-0871'", code),
     "job_finance_only_codes": ("SELECT count(*) FROM core.finance_jobs WHERE NOT mrp_matched", count),
     "job_finance_only_cost": (headline("job_cost", "finance_only_cost"), money),
     "labour_gap": (headline("job_cost", "labour_gap_gross"), money),
@@ -75,6 +86,7 @@ FIGURES: dict[str, tuple[str, callable]] = {
     "stock_value_error": (headline("stock", "value_error"), money),
     "material_variants": ("SELECT count(*) FROM core.material_golden WHERE source_codes LIKE '%,%'", count),
     "uom_conflicts": ("SELECT count(*) FROM core.material_golden WHERE uom_conflict", count),
+    "max_units": ("SELECT max(len(string_split(observed_uoms, ', '))) FROM core.material_golden", words),
     "grade_unconfirmed_lines": ("SELECT sum(row_count) FROM core.material_xref WHERE status = 'review' "
                                 "AND source_table IN ('purchase_orders', 'goods_received')", count),
     # suppliers

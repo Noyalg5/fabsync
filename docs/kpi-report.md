@@ -12,7 +12,7 @@ As at 2026-08-31. Definitions, formulas and sources are in `docs/data-dictionary
 | KPI-02 Labour variance | **7.4%** | within ±10% | on target |  | Production Controller |
 | KPI-03 Material yield and offcut waste | **76.2%** | >= 85% | off target |  | Production Controller |
 | KPI-04 Stock accuracy | **89.6%** | >= 95% | off target |  | Production Controller |
-| KPI-05 Three-way match exception rate | **53.8%** | <= 5% | off target | Value at risk: £4,315,268 | Finance Manager |
+| KPI-05 Three-way match exception rate | **53.8%** | <= 5% | off target | Value at risk: £4,314,978 | Finance Manager |
 | KPI-06 Material traceability coverage | **68.7%** | >= 100% | off target |  | Quality Manager |
 | KPI-07 WIP value and ageing | **£714,137** | no target | for information | Share of WIP over 90 days: 54.9% | Finance Manager |
 | KPI-08 Capacity utilisation | **86.1%** | 75% to 95% | on target |  | Production Controller |
@@ -101,7 +101,7 @@ By site:
 
 ## KPI-05 Three-way match exception rate
 
-**53.8%**. Target <= 5%: off target. Value at risk: £4,315,268.
+**53.8%**. Target <= 5%: off target. Value at risk: £4,314,978.
 
 The share of steel purchase orders that do not match cleanly across order, delivery and invoice, and the money tied up in all purchasing exceptions.
 
@@ -114,9 +114,9 @@ Value at risk by category:
 | invoice with no PO | 726 | 3,407,849.81 | 575 |
 | missing invoice | 66 | 428,173.13 | 62 |
 | missing GRN | 82 | 304,399.47 | 64 |
-| quantity variance | 377 | 115,552.56 | 333 |
-| price variance | 48 | 59,292.62 | 42 |
-| matched | 493 | 0 | 0 |
+| quantity variance | 373 | 115,129.39 | 331 |
+| price variance | 53 | 59,426.59 | 42 |
+| matched | 492 | 0 | 0 |
 
 ## KPI-06 Material traceability coverage
 

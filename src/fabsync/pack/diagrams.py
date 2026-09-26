@@ -121,15 +121,18 @@ def label(ax, x: float, y: float, text: str, colour: str = INK, size: float = 5.
 
 # ---- three disconnected systems ----------------------------------------------------------------------- #
 
-def three_systems(title: str, gaps: dict[str, str]) -> Figure:
-    """The three systems as the business runs them today, with the gaps between them labelled."""
+def three_systems(title: str, gaps: dict[str, str], job_code: str) -> Figure:
+    """The three systems as the business runs them today, with the gaps between them labelled.
+
+    `job_code` is the finance system's code for the example job J-24-0871, looked up in the warehouse.
+    """
     contents = {
         "corvus_mrp": ["Works orders, bills of material, stock", "Purchase orders, goods received",
                        "Installed 2006; UPPERCASE codes", "No supplier list"],
         "finance": ["Ledgers, invoices, payments", "Job costs and supplier accounts",
-                    "Its own job numbering, like 24871", "Invoices keyed by hand"],
+                    f"Its own job numbering, like {job_code}", "Invoices keyed by hand"],
         "shop_floor": ["Time bookings, delivery notes, NCRs", "Weekly capacity, one set per site",
-                       "Free text, three date formats", "Works orders typed by hand"],
+                       "Free text, mixed date formats", "Works orders typed by hand"],
     }
     with plt.rc_context(STYLE):
         h, w, bh = 74.0, 54.0, 6.2 + 4 * line_h(6.4) + 3.4
