@@ -99,7 +99,8 @@ with c2:
     ui.headline("Data quality index", f"{dq.dq_index:.1f} / 100",
                 "SELECT rule_id, rule_name, severity, owner, records_checked, records_failed, pass_rate, threshold, "
                 "threshold_met FROM governance.v_dq_latest ORDER BY score, rule_id", "ov_dqi",
-                note=f"{dq.rules_met} of {dq.rules_run} rules met; {dq.critical_breaches} critical rules breached")
+                note=f"{dq.rules_met:.0f} of {dq.rules_run:.0f} rules met; "
+                     f"{dq.critical_breaches:.0f} critical rules breached")
 with c3:
     ui.headline("Steel despatched without full traceability", f"{tx.value:,.0f} tonnes", tx.rows_sql, "ov_trace",
                 note=f"{tj.value:.0f} jobs already on site carry an EN 1090 exposure", explanation=tx.explanation)

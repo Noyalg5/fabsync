@@ -2,6 +2,51 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 11 follow-up: README (2026-09-28)
+
+**Done**
+- **EN 1090.** The README no longer says EN 1090 requires traceability on all work. Its question now ends "as
+  EN 1090 requires on EXC3 and EXC4 work?", after EN 1090-2 clause 5.2. The other places that state or imply
+  the wider requirement were listed for the owner and are unchanged for now.
+- **The README is audited.** It is now filled by `make readme`, which `make pack` also runs, from
+  `docs/templates/readme.md`. Each number comes from a warehouse query, a setting or a committed document.
+  `make audit` reads the README, pairs each number with its source, and fails if the README differs from a
+  fresh fill. The README now carries 45 numbers: 18 queries, 11 settings, 4 documents and 12 identifiers. None
+  is untraced.
+- **What the audit found in the old README.** It held 42 figures typed by hand, and none was recorded against
+  a source. Each was correct when checked against its source.
+  - 30 are now filled from their sources.
+  - 10 were removed:
+    - the pack's page count;
+    - the year Corvus was installed;
+    - "under two minutes";
+    - the chart resolution;
+    - the first day of the data;
+    - the number of ways works orders are written, which nothing records;
+    - "two-digit year";
+    - a repeated count of reconciliations;
+    - the counts of sites and systems in the scenario assumption.
+  - The risk scale "from 1 to 5" was reworded to "scored from 1 to 5" and counts as structure, as it does in the
+    pack.
+- **App port.** `.streamlit/config.toml` now sets the app's port, Streamlit's default of 8501, so the README
+  quotes a setting.
+- **Screenshots.** The README shows the Overview and Reconciliation pages. They were captured with headless
+  Chrome at 1440 px wide, full height, from the app running on the current warehouse, and saved in
+  `docs/images/`.
+
+**Found while capturing, and fixed**
+- **Overview tile.** Users saw "7.0 of 40.0 rules met; 4.0 critical rules breached", while the audit read "7 of
+  40". While auditing, the app's figures are traced values, and those print differently from plain numbers.
+  The tile now formats each count. The audit also renders the Overview both ways and fails if the text differs.
+  The pack needs no such check: the pack the audit reads is byte-identical to the one `make pack` publishes,
+  and the audit now confirms that on every run.
+- **Chart labels.** The app's bar charts allowed too little height for the value axis, so Vega dropped every
+  other category label on charts of five or more bars. The height now allows for the axis.
+
+**Not automated**
+- `make` does not retake the screenshots. The audit cannot read images, so they must be retaken when the
+  figures change.
+
 ## Mission 11: Verification and hardening (2026-09-26)
 
 **Clean run**

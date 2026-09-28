@@ -8,7 +8,7 @@ PYTHON  ?= $(firstword $(foreach p,python3.13 python3.12 python3.11 python3,$(sh
 # Dependencies are installed once, and again only when pyproject.toml changes, so later runs need no network.
 INSTALLED := .venv/.installed
 
-.PHONY: help venv generate ingest match quality reconcile kpi diagrams run-all app pack audit test coverage clean
+.PHONY: help venv generate ingest match quality reconcile kpi diagrams run-all app pack readme audit test coverage clean
 
 help:
 	@echo "generate  - create synthetic source extracts in data/raw/"
@@ -20,8 +20,10 @@ help:
 	@echo "diagrams  - fill the design diagrams with measured figures; render SVG and PNG"
 	@echo "run-all   - generate, ingest, match, quality, reconcile, kpi"
 	@echo "app       - launch the Streamlit demonstrator"
-	@echo "pack      - from a clean run: the A4 management pack PDF and its charts as 300 dpi PNGs in export/"
-	@echo "audit     - build the pack, then trace every number in it and on the Overview page to its source"
+	@echo "pack      - from a clean run: the A4 management pack PDF and its charts as 300 dpi PNGs in export/,"
+	@echo "            and README.md refilled from its template"
+	@echo "readme    - refill README.md from docs/templates/readme.md"
+	@echo "audit     - build the pack, then trace every number in it, on the Overview page and in README.md"
 	@echo "test      - run the pytest suite"
 	@echo "coverage  - run the suite under coverage.py and report line and branch coverage by module"
 	@echo "clean     - remove generated data, warehouse and caches"
@@ -71,10 +73,16 @@ app: venv
 # Rebuilds everything from a clean run first, so the pack always matches the data. Byte-identical on rerun.
 pack: run-all
 	$(PY) export/build_pack.py
+	$(PY) -m fabsync.readme
 	tar -czf $(EXPORT)/fabsync-demo.tar.gz data/warehouse docs README.md $(EXPORT)/fabsync-management-pack.pdf \
 		$(EXPORT)/figures
 
-# Traces every number in the pack and on the app's Overview page to its source; fails on any untraced number.
+# Every number in README.md is filled from a query, a setting or a committed document; edit the template.
+readme: venv
+	$(PY) -m fabsync.readme
+
+# Traces every number in the pack, on the app's Overview page and in README.md to its source; fails on any
+# untraced number, or if README.md is out of date.
 audit: pack
 	$(PY) -m fabsync.audit
 

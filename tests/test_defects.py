@@ -32,6 +32,7 @@ import pytest
 from fabsync.ingest.generate_sources import DEFAULT_SEED, generate
 from fabsync.ingest.pipeline import run_ingest
 from fabsync.match.pipeline import run_match
+from fabsync.pack.facts import md_table
 from fabsync.quality.engine import run_quality
 from fabsync.quality.rules import load_rules
 from fabsync.reconcile.pipeline import run_reconcile
@@ -133,6 +134,13 @@ def category(con, cat: str) -> set[str]:
 
 
 # ---- the register ----------------------------------------------------------------------------------------- #
+
+def test_the_project_brief_lists_every_registered_defect(world) -> None:
+    """The README quotes the number of defects from the brief's table, so the table must match the register."""
+    brief = (Path(__file__).resolve().parents[1] / "docs/project-brief.md").read_text(encoding="utf-8")
+    rows = md_table(brief, "| # | Defect | Where |")
+    assert [int(r[0]) for r in rows] == sorted(sections(world["md"]))
+
 
 def test_register_lists_every_defect_and_its_markdown_agrees_with_its_detail(world) -> None:
     secs, d, e = sections(world["md"]), world["detail"]["defects"], expected(world)

@@ -1,9 +1,11 @@
-"""Traceability audit: every number in the management pack and on the app's Overview page, traced to its source.
+"""Traceability audit: every number in the management pack, on the app's Overview page and in README.md, traced to
+its source.
 
-`make audit` rebuilds the pack and renders the Overview page with provenance recording on. Every figure the code
-prints is a traced value that records, as it is formatted, the query, config setting or document it came from (see
-`fabsync.provenance`). The audit then reads every number back out of what a reader actually sees, the PDF text, the
-text drawn in each chart and diagram, and the rendered Overview page, and matches each one to a recorded entry.
+`make audit` rebuilds the pack, renders the Overview page and refills the README with provenance recording on. Every
+figure the code prints is a traced value that records, as it is formatted, the query, config setting or document it
+came from (see `fabsync.provenance`). The audit then reads every number back out of what a reader actually sees, the
+PDF text, the text drawn in each chart and diagram, the rendered Overview page and the README, and matches each one
+to a recorded entry.
 Each entry can vouch for one printed number only, so a number typed into the prose by hand finds nothing to match
 and is reported as untraced.
 
@@ -13,13 +15,15 @@ seed. A number traced to the warehouse should change with the data; any that do 
 Sources:
 
 * warehouse: a named query against the warehouse, cited with its SQL;
-* config: a setting in `config/`, such as a tolerance, a target or a risk score;
+* config: a setting, such as a tolerance, a target or a risk score in `config/`, the Python version the project
+  requires in `pyproject.toml`, or the app's port in `.streamlit/config.toml`;
 * document: a committed planning or design document, such as the benefits case, whose own tests check its
   figures against the warehouse;
 * scenario: a fact of the invented company that no data records;
 * structure: page numbers, identifiers, section counters and axis scales, which are not figures.
 
-The report is `docs/traceability-audit.md`. A test fails if any number is untraced or the report is out of date.
+The report is `docs/traceability-audit.md`. A test fails if any number is untraced, or if the report or README.md is
+out of date.
 """
 
 from __future__ import annotations
@@ -27,6 +31,7 @@ from __future__ import annotations
 import os
 import re
 from collections import defaultdict, deque
+from contextlib import nullcontext
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -50,7 +55,7 @@ STRUCTURE = [
     (re.compile(r"\b3\.1 (?:mill )?certificate"), "certificate type under EN 10204"),
     (re.compile(r"Page \d+"), "page number"),
     (re.compile(r"What we found: \d of \d"), "section counter"),
-    (re.compile(r"(?<![\w.])\d{1,2}\. (?=[A-Z])"), "numbered step or phase"),
+    (re.compile(r"(?<![\w.])\d{1,2}\. (?=[A-Z*])"), "numbered step, phase or list item"),
     (re.compile(r"\bM\d{1,2}\b"), "month label"),
     (re.compile(r"(?i)\bphases? \d+(?:(?:, | and | to )\d+)*\b"), "phase identifier"),
     (re.compile(r"\bon page \d{1,2}\b"), "page reference"),
@@ -62,6 +67,7 @@ STRUCTURE = [
     (re.compile(r"\bThree numbers that matter\b"), "the heading over the three headline figures"),
     (re.compile(r"\bcomparing two systems\b|\bthe two agree\b|\btwo scores\b"), "wording, not a count"),
 ]
+README = "README.md"
 
 
 class AuditError(RuntimeError):
@@ -181,6 +187,29 @@ def attribute(found: list[Found], entries: list[tuple[str, Origin, str]], con: d
             f.origin = Origin("scenario", SCENARIO[f.token.rstrip(",;")], "")
 
 
+def overview(warehouse: Path, recording: bool) -> tuple[list[str], list]:
+    """The Overview page's text as rendered from this warehouse, and what it recorded if recording."""
+    from streamlit.testing.v1 import AppTest
+
+    before = {k: os.environ.get(k) for k in (ENV, "FABSYNC_WAREHOUSE")}
+    os.environ.pop(ENV, None)
+    if recording:
+        os.environ[ENV] = "1"
+    os.environ["FABSYNC_WAREHOUSE"] = str(warehouse)
+    entries: list = []
+    try:
+        # An open ledger switches recording on, so the plain rendering must not open one.
+        with ledger() if recording else nullcontext(entries) as entries:
+            at = AppTest.from_file(str(Path(__file__).resolve().parents[2] / "app/app.py"), default_timeout=60).run()
+    finally:
+        for k, v in before.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    return page_text(at), entries
+
+
 def page_text(at) -> list[str]:
     """The text of a rendered page, element by element in the order a reader meets it."""
     from streamlit.testing.v1.element_tree import Block, Button, HeadingBase, Markdown
@@ -198,15 +227,15 @@ def page_text(at) -> list[str]:
 
 
 def read(warehouse: Path, out: Path) -> list[Found]:
-    """Build the pack and render the Overview with recording on; read every number back out of both."""
+    """Build the pack, render the Overview and refill the README with recording on; read every number back out."""
     from matplotlib import pyplot as plt
     from pypdf import PdfReader
-    from streamlit.testing.v1 import AppTest
 
     from fabsync.pack import charts
     from fabsync.pack.build import make_figures
     from fabsync.pack.document import build_pdf
     from fabsync.pack.facts import load
+    from fabsync.readme import render
 
     con = duckdb.connect(str(warehouse), read_only=True)
     try:
@@ -224,25 +253,30 @@ def read(warehouse: Path, out: Path) -> list[Found]:
         for n, (page, section) in enumerate(zip(pages, sections, strict=True), start=1):
             found += scan(f"Pack page {n}", page.extract_text(), where=section)
         attribute(found, entries, con)
-        before = {k: os.environ.get(k) for k in (ENV, "FABSYNC_WAREHOUSE")}
-        os.environ[ENV] = "1"
-        os.environ["FABSYNC_WAREHOUSE"] = str(warehouse)
-        try:
-            with ledger() as app_entries:
-                at = AppTest.from_file(str(Path(__file__).resolve().parents[2] / "app/app.py"),
-                                       default_timeout=60).run()
-        finally:
-            for k, v in before.items():
-                if v is None:
-                    os.environ.pop(k, None)
-                else:
-                    os.environ[k] = v
-        app = [f for t in page_text(at) for f in scan("App Overview page", t)]
+        # The app only records while auditing, and a traced value can print differently from a plain one, so the
+        # page is rendered both ways: what is audited must be exactly what a user sees.
+        seen, _ = overview(warehouse, recording=False)
+        texts, app_entries = overview(warehouse, recording=True)
+        if texts != seen:
+            diff = next((a, b) for a, b in zip(seen, texts, strict=False) if a != b) if len(seen) == len(texts) \
+                else (f"{len(seen)} elements", f"{len(texts)} elements")
+            raise AuditError(f"the Overview page reads differently when audited: {diff[0]!r} becomes {diff[1]!r}")
+        app = [f for t in texts for f in scan("App Overview page", t)]
         attribute(app, app_entries, con)
+        with ledger() as readme_entries:
+            readme = scan(README, render(facts, con))
+        attribute(readme, readme_entries, con)
     finally:
         con.close()
         plt.close("all")
-    return found + app
+    return found + app + readme
+
+
+def readme_is_current(warehouse: Path) -> bool:
+    """Whether the committed README.md is exactly what its template fills to from this warehouse."""
+    from fabsync.readme import README as path
+    from fabsync.readme import build
+    return path.read_text(encoding="utf-8") == build(warehouse)
 
 
 def source(f: Found) -> tuple[str, str, str]:
@@ -316,22 +350,23 @@ def report(found: list[Found]) -> str:
     kinds = KINDS + ["untraced"]
     groups = {"Pack pages": [f for f in found if f.place.startswith("Pack page")],
               "Pack charts and diagrams": [f for f in found if f.place.startswith("Pack figure")],
-              "App Overview page": [f for f in found if f.place.startswith("App")]}
+              "App Overview page": [f for f in found if f.place.startswith("App")],
+              "README.md": [f for f in found if f.place == README]}
     lines = [
         "# Traceability audit",
         "",
         "**Demonstration prototype. All data is synthetic.** This audit shows where every number shown to management "
-        "comes from.",
+        "comes from: in the management pack, on the app's Overview page and in the README.",
         "",
-        "Generated by `make audit`. The pack is rebuilt and the app's Overview page rendered with provenance "
-        "recording on: every figure the code prints records, as it is formatted, the query, config setting or "
-        "document it came from. Every number is then read back out of what a reader sees (the PDF text, the text in "
-        "each chart and diagram, and the rendered page) and matched to one recorded entry. A number typed into the "
-        "prose by hand has no entry, and is listed as untraced. A test fails if any number is untraced or if this "
-        "file is out of date.",
+        "Generated by `make audit`. The pack is rebuilt, the app's Overview page rendered and the README refilled "
+        "from its template with provenance recording on: every figure the code prints records, as it is formatted, "
+        "the query, config setting or document it came from. Every number is then read back out of what a reader "
+        "sees (the PDF text, the text in each chart and diagram, the rendered page and the README) and matched to "
+        "one recorded entry. A number typed by hand has no entry, and is listed as untraced. A test fails if any "
+        "number is untraced, or if this file or the README is out of date.",
         "",
-        "As an independent check, the pack and page are built a second time from a control warehouse generated from a "
-        "different seed. A number traced to the warehouse should change with the data.",
+        "As an independent check, the pack, page and README are built a second time from a control warehouse "
+        "generated from a different seed. A number traced to the warehouse should change with the data.",
         "",
         "## Summary",
         "",
@@ -353,14 +388,16 @@ def report(found: list[Found]) -> str:
     paired = [f for f in found if f.same_source is not None]
     moved = [f for f in paired if not f.same_source]
     lines += ["", "Each number is counted every time it appears. **Warehouse** is the result of a named query, listed "
-              "at the end with its SQL. **Config** is a setting in `config/`. **Document** is a committed planning or "
-              "design document whose own tests check its figures against the warehouse. **Scenario** is a fact of the "
-              "invented company that no data records. **Structure** is a page number, identifier, section counter or "
-              "axis scale, which is not a figure.", "",
+              "at the end with its SQL. **Config** is a setting: in `config/`, or the Python version in "
+              "`pyproject.toml` and the app's port in `.streamlit/config.toml`. **Document** is a committed "
+              "planning or design document whose own tests check its figures against the warehouse. **Scenario** "
+              "is a fact of the invented company that no data records. **Structure** is a page number, identifier, "
+              "section counter or axis scale, which is not a figure.", "",
               "## The control build", "",
-              "The pack and page were built again from a control warehouse generated from a different seed. Each "
-              "number was paired with the number in the same position of the control build, on every page and chart "
-              "laid out alike in both. Places whose control has a different number of rows are not paired"
+              "The pack, page and README were built again from a control warehouse generated from a different "
+              "seed. Each number was paired with the number in the same position of the control build, on every "
+              "page and chart laid out alike in both. Places whose control has a different number of rows are not "
+              "paired"
               + (f" ({', '.join(unpaired)})." if unpaired else "."), "",
               f"* **Same source.** Of {len(paired):,} numbers paired, {len(paired) - len(moved):,} cite the same kind "
               "of source, the same query or file and the same column in both builds. A number paired with an entry "
@@ -436,6 +473,11 @@ def main() -> None:
     print("Report: docs/traceability-audit.md")
     if counts["untraced"]:
         raise SystemExit(f"{counts['untraced']} numbers do not trace to a source")
+    published = root / "export" / "fabsync-management-pack.pdf"
+    if published.exists() and published.read_bytes() != (out / "real" / "pack.pdf").read_bytes():
+        raise SystemExit("the pack the audit read differs from export/fabsync-management-pack.pdf: run make pack")
+    if not readme_is_current(root / "data/warehouse/fabsync.duckdb"):
+        raise SystemExit("README.md is out of date: run make readme, and edit docs/templates/readme.md, not README.md")
     if moved:
         raise SystemExit(f"{len(moved)} numbers cite a different source in the control build")
 

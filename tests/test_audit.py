@@ -13,9 +13,10 @@ import duckdb
 import pytest
 import yaml
 
-from fabsync import audit
+from fabsync import audit, readme
 from fabsync.ingest.generate_sources import DEFAULT_SEED
 from fabsync.pack import charts, document
+from fabsync.pack.facts import load
 from fabsync.provenance import ledger, total, trace, word
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +43,7 @@ def test_the_audit_reads_every_page_chart_and_the_overview(found):
     charts_read = {p.removeprefix("Pack figure ") for p in places if p.startswith("Pack figure ")}
     assert len(charts_read) == 12 and "10-target-architecture" not in charts_read  # the only chart with no numbers
     assert "App Overview page" in places
+    assert "README.md" in places
     assert len(found) > 800
 
 
@@ -50,6 +52,38 @@ def test_the_overview_shows_only_warehouse_figures(found):
     kinds = {f.kind for f in found if f.place == "App Overview page"}
     assert kinds <= {"warehouse", "structure", "scenario"}
     assert [f.token for f in found if f.place == "App Overview page" and f.kind == "scenario"] == ["2006"]
+
+
+def test_the_audited_overview_is_what_a_user_sees(warehouse):
+    """The app only records while auditing; the page must read the same either way. A tile once showed users
+    "7.0 of 40.0 rules met" while the audit read "7 of 40"."""
+    plain, _ = audit.overview(warehouse, recording=False)
+    audited, entries = audit.overview(warehouse, recording=True)
+    assert entries and audited == plain
+
+
+def test_the_readme_quotes_only_queries_settings_and_documents(found):
+    """Every figure in the README is a query result, a setting or a committed document; the rest are identifiers."""
+    assert {f.kind for f in found if f.place == "README.md"} <= {"warehouse", "config", "document", "structure"}
+
+
+def test_the_committed_readme_is_current(warehouse):
+    assert (ROOT / "README.md").read_text(encoding="utf-8") == readme.build(warehouse), "run make readme"
+
+
+def test_a_number_typed_into_the_readme_is_caught(warehouse, tmp_path, monkeypatch):
+    template = tmp_path / "readme.md"
+    template.write_text(readme.TEMPLATE.read_text(encoding="utf-8") + "\nIt saves 1,234 hours a year.\n",
+                        encoding="utf-8")
+    monkeypatch.setattr(readme, "TEMPLATE", template)
+    con = duckdb.connect(str(warehouse), read_only=True)
+    try:
+        with ledger() as entries:
+            found = audit.scan("README.md", readme.render(load(con), con))
+        audit.attribute(found, entries, con)
+    finally:
+        con.close()
+    assert [f.token for f in found if f.kind == "untraced"] == ["1,234"]
 
 
 def test_each_number_cites_the_same_source_in_the_control_build(found):

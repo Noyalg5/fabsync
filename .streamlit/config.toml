@@ -8,6 +8,8 @@ fileWatcherType = "none"
 # Bind to this machine only. This also stops Streamlit looking up the public IP address
 # at startup, which would be a network call.
 address = "localhost"
+# Streamlit's own default, set here so the README can quote it from a setting.
+port = 8501
 
 [client]
 toolbarMode = "minimal"

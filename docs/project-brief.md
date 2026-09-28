@@ -53,7 +53,8 @@ source of project context is this file.
 | `src/fabsync/pack/` | Management pack: `facts.py` gathers every figure, `charts.py` and `diagrams.py` draw at 300 dpi, `terms.py` the glossary, `document.py` the pages, `build.py` orchestrates |
 | `src/fabsync/palette.py` | Colour semantics shared by the app and the pack |
 | `src/fabsync/provenance.py` | Traced values: during an audit every printed figure records the query, setting or document it came from |
-| `src/fabsync/audit.py` | Traceability audit: reads every number back out of the pack and the Overview page and pairs it with its source; writes `docs/traceability-audit.md` |
+| `src/fabsync/audit.py` | Traceability audit: reads every number back out of the pack, the Overview page and `README.md` and pairs it with its source; writes `docs/traceability-audit.md` |
+| `src/fabsync/readme.py` | Fills `README.md` from `docs/templates/readme.md`: every number comes from a query, a setting or a committed document. Edit the template, not the README |
 | `src/fabsync/kpi/` | KPI marts: `sql/` holds the documented views, `build.py` builds and validates, `report.py` writes the data dictionary and KPI report |
 | `app/` | Streamlit demonstrator: `app.py` entry and navigation, `views/` one file per page |
 | `config/` | `roadmap.yaml` phases, management committee reviews, risks, training and data domains, mirroring the planning documents; `kpis.yaml` KPI definitions and targets; `dq_rules.yaml` the data quality rules; `reconcile.toml` tolerances and targets; `conformance.toml` site and operation aliases; `matching.toml` thresholds, effort assumptions, name standardisation; `section_catalogue.csv` reference masses |
@@ -63,7 +64,11 @@ source of project context is this file.
 | `tests/` | pytest suite; `test_defects.py` reads the defect register as the expected set, `test_audit.py` runs the traceability audit |
 | `export/` | `build_pack.py` (committed), the entry point for `make pack`; the PDF, `figures/` and demo bundle it writes (not committed) |
 
-Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `audit`, `test`, `coverage`, `clean`.
+Make targets: `generate`, `ingest`, `match`, `quality`, `reconcile`, `kpi`, `diagrams`, `run-all`, `app`, `pack`, `readme`, `audit`, `test`, `coverage`, `clean`.
+
+`docs/images/` holds the README's screenshots of the Overview and Reconciliation pages, captured with a headless
+browser at 1440 px wide. `make` does not retake them, and the audit cannot read images: retake them when the
+figures change.
 
 ## The three source systems
 

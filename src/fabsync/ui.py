@@ -228,7 +228,8 @@ def bar_h(frame: pd.DataFrame, category: str, value: str, x_title: str, label: s
     if target is not None:
         layers.append(alt.Chart(pd.DataFrame({"t": [target]})).mark_rule(color=INK, strokeDash=[4, 3])
                       .encode(x="t:Q"))
-    h = height or max(120, 26 * len(frame) + 40)
+    # About 70 px go to the value axis and its title; each bar needs 26 px or Vega drops alternate labels.
+    h = height or max(120, 26 * len(frame) + 70)
     st.altair_chart(_base(alt.layer(*layers), h), width="stretch")
 
 
