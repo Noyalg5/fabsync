@@ -50,7 +50,7 @@ rules:
     system_of_record: corvus_mrp
     owner: Quality Manager
     threshold: 1.0
-    consequence: Steel cannot be traced to its mill certificate. Under EN 1090-2 factory production control that is a nonconformity, and the finished steelwork cannot be UKCA or CE marked until it is resolved.
+    consequence: Steel cannot be traced to its mill certificate. EN 1090-2 requires that trace, from receipt to hand over, on EXC3 and EXC4 work, so steel from this delivery cannot go into an EXC3 structure until it is resolved; on EXC2 work the gap is a failure of good practice rather than of the standard.
     corrective_action: Take the heat number from the delivery ticket or the steel itself and add it to the goods received note. If it cannot be found, quarantine the material.
     covers_defects: [6]
     check:
@@ -68,7 +68,7 @@ rules:
     system_of_record: corvus_mrp
     owner: Quality Manager
     threshold: 1.0
-    consequence: Without the certificate there is no evidence of chemistry or strength. The steel cannot be used on EXC2 or higher work, and an auditor will raise a major finding.
+    consequence: Without the certificate there is no evidence of chemistry or strength. EN 1090-2 requires a 3.1 inspection document for S355 at every execution class (DQ-41), and full traceability to the certificate on EXC3 and EXC4 work.
     corrective_action: Request the 3.1 certificate from the supplier, file it, and record its reference on the goods received note.
     covers_defects: [6]
     check:
@@ -77,6 +77,29 @@ rules:
                coalesce(mill_cert_ref, '(blank)') || ' on ' || po_no AS observed,
                _source_file AS source_file, _source_row AS source_row
         FROM staging.corvus_mrp_goods_received
+
+  - id: DQ-41
+    name: 3.1 inspection document on every S355 receipt
+    description: Every delivery of S355 steel references its EN 10204 3.1 inspection document, whatever the execution class of the work it is used on.
+    dimension: completeness
+    severity: critical
+    system_of_record: corvus_mrp
+    owner: Quality Manager
+    threshold: 1.0
+    consequence: EN 1090-2 requires a 3.1 inspection document for S355 at every execution class, EXC2 included. S355 from this delivery cannot be used on any certified structure, and any already despatched is an EN 1090 compliance exposure.
+    corrective_action: Obtain a duplicate 3.1 certificate from the mill or stockholder by heat number and record its reference. Until then, red-tag the steel and keep it off structural work.
+    covers_defects: [6]
+    check:
+      sql: |
+        -- Only receipts whose code confirms the grade can be tested; the rest wait in the grade review queue.
+        SELECT g.grn_no AS record_key, g.mill_cert_ref IS NOT NULL AS passed,
+               m.grade || ', ' || coalesce('certificate ' || g.mill_cert_ref, 'no mill certificate') || ' on '
+                 || g.po_no AS observed,
+               g._source_file AS source_file, g._source_row AS source_row
+        FROM staging.corvus_mrp_goods_received g
+        JOIN core.material_xref x ON x.source_table = 'goods_received' AND x.source_code = g.material_code
+        JOIN core.material_golden m ON m.canonical_code = x.canonical_code
+        WHERE x.status = 'auto' AND m.grade LIKE 'S355%'
 
   - id: DQ-03
     name: Steel grade stated on every order and receipt

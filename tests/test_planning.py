@@ -17,6 +17,7 @@ from fabsync.ingest.generate_sources import DEFAULT_SEED, generate
 from fabsync.ingest.pipeline import run_ingest
 from fabsync.kpi.build import build_marts
 from fabsync.match.pipeline import run_match
+from fabsync.provenance import WORDS as WORD
 from fabsync.quality.engine import run_quality
 from fabsync.reconcile.pipeline import run_reconcile
 
@@ -25,6 +26,8 @@ PLAN = ROOT / "docs/rollout-plan.md"
 REGISTER = ROOT / "docs/risk-register.md"
 TRAINING = ROOT / "docs/training-plan.md"
 BENEFITS = ROOT / "docs/benefits-case.md"
+# The rules about traceability: heat number, certificate, grade on receipt, and a 3.1 document on S355.
+TRACEABILITY_RULES = {"DQ-01", "DQ-02", "DQ-03", "DQ-41"}
 ROADMAP = ROOT / "config/roadmap.yaml"
 
 PHASES = ["1. Discovery and baseline", "2. Master data cleanse", "3. Read-only integration and reporting",
@@ -349,7 +352,7 @@ def test_what_is_not_claimed_quotes_measured_figures(con) -> None:
         "Goods received but not invoiced": fig(con, "missing_invoice_value"),
         "Stock value error": fig(con, "stock_value_error"),
         "Hours booked to works orders not in Corvus": fig(con, "unallocated_hours"),
-        "Sales on jobs with incomplete traceability": fig(con, "trace_exposed_sales"),
+        "Sales on jobs with an EN 1090 compliance exposure": fig(con, "trace_exposed_sales"),
         "Office time spent re-keying": "Not measured",
     }
     rows = table_rows(read(BENEFITS), "| Measured figure (synthetic) | Value |")
@@ -430,6 +433,8 @@ def test_figures_quoted_in_the_plan_and_register_are_measured(con) -> None:
              for k in ["exposed_jobs", "exposed_customers", "break_heat_number_missing",
                        "break_mill_certificate_missing", "break_receipt_grade_unconfirmed",
                        "break_no_receipt_on_record", "break_no_delivery_note"]}
+    breached = {r for (r,) in con.execute("SELECT rule_id FROM governance.v_dq_latest "
+                                          "WHERE severity = 'critical' AND NOT threshold_met").fetchall()}
     straddle_hours = value(con, f"SELECT sum(booked_hours) FILTER (WHERE {STRADDLES}) {capacity}")
     all_hours = value(con, f"SELECT sum(booked_hours) {capacity}")
     weeks = value(con, f"SELECT count(DISTINCT week_commencing) {capacity}")
@@ -451,12 +456,20 @@ def test_figures_quoted_in_the_plan_and_register_are_measured(con) -> None:
         f"duplicate supplier entities, with {fig(con, 'supplier_dupes_likely')} more likely",
         f"The prototype holds {count(value(con, 'SELECT count(*) FROM core.material_golden'))} materials and "
         f"{count(value(con, 'SELECT count(*) FROM core.supplier_golden'))} supplier entities",
-        f"Traceability coverage is {fig(con, 'coverage')} by weight. {fig(con, 'trace_exposed_tonnes')} have been "
-        f"despatched on {trace['exposed_jobs']} jobs for {trace['exposed_customers']} customers",
+        f"{fig(con, 'exc3_jobs')} jobs are EXC3 and {fig(con, 'exc2_jobs')} EXC2. Traceability coverage is "
+        f"{fig(con, 'coverage_exc3')} by weight on EXC3 work and {fig(con, 'coverage_exc2')} on EXC2. "
+        f"{fig(con, 'trace_exposed_tonnes')} already despatched carry an EN 1090 compliance exposure, on "
+        f"{trace['exposed_jobs']} jobs for {trace['exposed_customers']} customers: "
+        f"{fig(con, 'trace_exposed_exc3_tonnes')} of EXC3 steel without a complete chain from mill certificate to "
+        f"delivery, and {fig(con, 'trace_exposed_s355_tonnes')} of S355 on EXC2 jobs with no 3.1 certificate shown. "
+        f"A further {fig(con, 'trace_gap_tonnes')} on EXC2 work have incomplete chains",
         f"heat number is missing ({trace['break_heat_number_missing']} lines), the certificate is missing "
         f"({trace['break_mill_certificate_missing']}), the grade is unconfirmed on receipt "
         f"({trace['break_receipt_grade_unconfirmed']}), there is no receipt on record "
         f"({trace['break_no_receipt_on_record']}) or there is no delivery note ({trace['break_no_delivery_note']})",
+        f"{WORD[len(breached & TRACEABILITY_RULES)].capitalize()} of the {WORD[len(breached)]} breached critical "
+        f"data quality rules are about traceability, among them DQ-41: {fig(con, 's355_receipts_no_31')} receipts "
+        "of S355 with no 3.1 certificate",
         f"Of {count(weeks)} production weeks in the synthetic capacity sheets, {count(straddling)} straddle a "
         f"month end. They carry {count(straddle_hours)} of the {count(all_hours)} hours",
         f"booked, {100 * straddle_hours / all_hours:.0f}%.",

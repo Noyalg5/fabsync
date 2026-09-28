@@ -2,6 +2,90 @@
 
 Running mission log. Updated after every mission. Newest entry at the top.
 
+## Mission 12: Execution classes (2026-09-28)
+
+**Done**
+- **Generator.** Every job has an execution class, EXC2 or EXC3, as its designer would specify under
+  EN 1090-2. Classes are drawn by kind of project from a random stream of their own, so the other 12
+  extracts are byte-identical, and `works_orders.csv` differs only by its new last column. The share of
+  EXC3 by kind of project:
+
+  | Kind of project | EXC3 share |
+  | --- | ---: |
+  | Rail | 85% |
+  | Stadium | 75% |
+  | Telecoms | 70% |
+  | Structural | 15% |
+  | Architectural | 10% |
+
+  The draw gave 53 EXC3 jobs and 97 EXC2. `DEFECTS.md` records the mix under Scenario, and `defects.json`
+  under `scenario`, as a property of the scenario, not a defect. The defect 6 text no longer says every
+  receipt must trace to a 3.1 certificate. It now names the 79 planted S355 receipts with no certificate.
+- **Ingest.** The Corvus contract accepts EXC1 to EXC4. `core.works_orders` and `core.jobs` carry the
+  class. A job whose works orders disagree would have no class and be treated as EXC3; none does.
+- **The traceability split.** Each despatched BOM line with a gap is classed by its job's class:
+  - On an EXC3 job, any incomplete chain is an EN 1090 compliance exposure.
+  - On an EXC2 job, S355 with no 3.1 certificate shown is a compliance exposure.
+  - Any other incomplete chain on an EXC2 job is a quality and good-practice gap, reported separately.
+- **The 3.1 check.** S355 is checked for a 3.1 document at every class, on lines and on receipts. The new
+  `recon.trace_receipts` lists every receipt with its confirmed grade and certificate. The new critical rule
+  DQ-41 flags 69 S355 receipts with no certificate, exactly the engine's list. The other 10 planted S355
+  receipts have codes that omit the grade, so the data cannot confirm them; they wait in the grade review
+  queue.
+- **Rules and KPI.**
+  - DQ-01 and DQ-02 no longer claim EN 1090 requires traceability on all work, and DQ-02's claim about EXC2
+    certificates is replaced.
+  - KPI-06 now measures coverage on EXC3 work, against its 100% target. Coverage on EXC2 work is shown
+    beside it, with no target. The caveat says why.
+- **Everything else brought into line.** The reconciliation report, pack, app, process maps and diagrams,
+  README, project brief, benefits case and risk register now carry the class-aware figures and wording.
+  - The pack defines "execution class" at first use.
+  - The Reconciliation page adds a chart of despatched steel by what its gap means.
+  - Every statement from the earlier list that implied EN 1090 requires traceability on all work is
+    corrected.
+  - The Overview screenshot is retaken.
+- **Tests.** Three new tests:
+  - every job has one class, consistent with the extract and recorded as a scenario property;
+  - exposure follows the class line by line, and every despatched break is exactly one of the three kinds;
+  - every S355 receipt is checked at every class.
+
+  DQ-41 is checked against the register. The planning tests recompute the new wording in R04 and the
+  benefits case from the warehouse. 209 tests pass.
+
+**What moved**
+
+| Figure | Before | After |
+| --- | --- | --- |
+| Headline exposure | 1,103 t despatched without full traceability | 786 t with an EN 1090 compliance exposure |
+| Of which EXC3, chain incomplete | | 384 t |
+| Of which S355 on EXC2, no 3.1 certificate shown | | 402 t |
+| Good-practice gap, EXC2 (new) | | 316 t on 92 jobs |
+| Jobs exposed | 148 | 145: all 53 EXC3 jobs and 92 EXC2 |
+| Customers exposed | 38 | 38 |
+| Sales on exposed jobs | £14.47m | £14.35m |
+| KPI-06 | 68.7%, all work | 66.4% on EXC3 work; 69.9% on EXC2 |
+| Data quality index | 92.2; 40 rules, 7 met, 4 critical breaches | 92.1; 41 rules, 7 met, 5 critical breaches |
+| Modelled index in the benefits case | 98.0 | 98.1 |
+| Numbers traced by the audit | 966 | 994, none untraced; 923 of 923 paired numbers cite the same source in the control build |
+
+- **Unchanged:** coverage across all work (68.7%), the chain breaks (651, 458, 656, 74, 21 lines), and every
+  figure from the three-way match, job cost, stock, KPIs other than KPI-06, and the benefits in pounds. The
+  extracts they come from are byte-identical.
+- **Consistency check:** the old measure still reconciles. The 1,102.6 t of despatched steel with an
+  incomplete chain is exactly 786.2 t of exposure plus 316.5 t of good-practice gap.
+
+**Judgement calls**
+- **The cautious reading.** S355 on EXC2 work counts as exposed wherever no certified receipt covers all of
+  it: 216 t where a supplying receipt has no certificate, plus 186 t where the records cannot show one. The
+  second part is steel whose receipts omit the grade, or that no receipt covers. Counting only the first part
+  would make the headline 600 t rather than 786 t.
+- **Which grades the 3.1 check covers.** It applies to all S355, J0 and J2 alike. The clause names S355 JR/J0
+  at EXC2; the data holds S355J0 and S355J2.
+- **Mixed-grade marking at EXC2 is not checked.** No record of marking exists, so EXC2 lines whose grade is
+  unconfirmed fall in the good-practice gap.
+- **The roadmap's goods-in control is unchanged.** Heat number and certificate on every receipt is company
+  policy, not a claim about the standard.
+
 ## Mission 11 follow-up: README (2026-09-28)
 
 **Done**

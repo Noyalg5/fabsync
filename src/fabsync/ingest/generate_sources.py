@@ -320,6 +320,12 @@ SECTORS = {
 SECTOR_WEIGHTS = [("structural", 35), ("telecoms", 25), ("rail", 15), ("architectural", 15),
                   ("stadium", 10)]
 
+# Execution class to EN 1090-2, which the designer specifies for each structure: the share of each kind of
+# project specified EXC3, the rest being EXC2. Towers and masts, rail structures and stadium stands carry
+# higher consequences of failure, or fatigue loading, than warehouse frames and feature staircases. A property
+# of the scenario, not a defect.
+EXC3_SHARE = {"telecoms": 0.7, "rail": 0.85, "stadium": 0.75, "structural": 0.15, "architectural": 0.1}
+
 WO_DESCRIPTIONS = ["MAIN MEMBER {m}", "{m} ASSEMBLY", "{m} FABRICATION", "{m} C/W CLEATS",
                    "{m} GALV FINISH", "{m} PAINTED FINISH", "{m} AS DRG REV {r}"]
 
@@ -537,6 +543,7 @@ class Job:
     customer_ref: str
     finance_only: bool = False
     labour_factor: float = 1.0
+    execution_class: str = ""
     wos: list[WorksOrder] = field(default_factory=list)
 
     @property
@@ -734,6 +741,24 @@ class SourceGenerator:
                             "", finance_only=True))
         return jobs
 
+    def assign_execution_classes(self, jobs: list[Job]) -> None:
+        """Give every job the execution class its designer specified, by the kind of project.
+
+        Uses its own random stream so the rest of the output is unchanged by it.
+        """
+        rng = random.Random(self.seed * 7919 + 23)
+        for job in jobs:
+            job.execution_class = "EXC3" if rng.random() < EXC3_SHARE[job.sector] else "EXC2"
+        corvus = [j for j in jobs if not j.finance_only]
+        self.manifest["scenario"] = {"execution_class": {
+            "note": "Specified by the designer per structure and recorded on every Corvus works order. "
+                    "A property of the scenario, not a defect.",
+            "exc3_share_by_sector": EXC3_SHARE,
+            "jobs": {j.job_no: j.execution_class for j in sorted(corvus, key=lambda j: j.job_no)},
+            "by_sector": {sector: {c: sum(1 for j in corvus if j.sector == sector and j.execution_class == c)
+                                   for c in ("EXC2", "EXC3")} for sector in sorted(EXC3_SHARE)},
+        }}
+
     def build_works_orders(self, jobs: list[Job], materials: list[Material]) -> list[WorksOrder]:
         rng = self.rng
         wos: list[WorksOrder] = []
@@ -898,6 +923,9 @@ class SourceGenerator:
             "grn_missing_heat_or_cert": sorted(gap_ids),
             "count": len(gap_ids), "total_grns": len(grns),
             "share": round(len(gap_ids) / len(grns), 3),
+            # S355 needs a 3.1 inspection document at every execution class.
+            "s355_grn_without_certificate": sorted(g.grn_no for g in grns
+                                                   if g.po.material.grade.startswith("S355") and not g.mill_cert_ref),
         }
         self.manifest["defects"]["5_three_way_match"] = {
             "po_without_grn": po_without_grn,
@@ -1063,6 +1091,7 @@ class SourceGenerator:
         suppliers = self.build_suppliers()
         customers = self.build_customers()
         jobs = self.build_jobs(customers)
+        self.assign_execution_classes(jobs)
         wos = self.build_works_orders(jobs, materials)
         pos, grns = self.build_purchasing(wos, materials, suppliers)
         bookings, orphans = self.build_bookings(wos)
@@ -1082,11 +1111,12 @@ class SourceGenerator:
         self.write_csv(mrp_dir / "works_orders.csv", "Corvus MRP",
                        ["wo_no", "job_no", "customer_ref", "part_code", "description", "qty", "uom",
                         "planned_hours", "planned_start", "planned_finish", "actual_finish", "status",
-                        "site"],
+                        "site", "execution_class"],
                        [[wo.wo_no, wo.job.job_no, pad(wo.job.customer_ref, 15), pad(wo.part_code, 15),
                          pad(wo.description, 30), wo.qty, "EA", f"{wo.planned_hours:.1f}",
                          fmt_mrp(wo.planned_start), fmt_mrp(wo.planned_finish),
-                         fmt_mrp(wo.actual_finish), pad(wo.status, 10), wo.site] for wo in wos])
+                         fmt_mrp(wo.actual_finish), pad(wo.status, 10), wo.site, wo.job.execution_class]
+                        for wo in wos])
 
         bom_rows = []
         for wo in wos:
@@ -1568,6 +1598,23 @@ def render_defects_md(m: dict) -> str:
     ]
     for path, n in sorted(m["row_counts"].items()):
         lines.append(f"| `{path}` | {n:,} |")
+    exc = m["scenario"]["execution_class"]
+    total = {c: sum(v[c] for v in exc["by_sector"].values()) for c in ("EXC2", "EXC3")}
+    lines += [
+        "",
+        "## Scenario",
+        "",
+        "Execution class to EN 1090-2 is specified by the designer for each structure and recorded on every",
+        "Corvus works order. It sets how much traceability the standard requires: for EXC3 and EXC4, full",
+        "traceability from receipt to hand over; for EXC2, a 3.1 inspection document for S355 and marking of",
+        f"mixed grades. This is a property of the scenario, not a defect. Of the {sum(total.values())} Corvus jobs,",
+        f"{total['EXC3']} are EXC3 and {total['EXC2']} EXC2:",
+        "",
+        "| Kind of project | Jobs | EXC2 | EXC3 |",
+        "| --- | --- | --- | --- |",
+    ]
+    for sector, n in exc["by_sector"].items():
+        lines.append(f"| {sector} | {n['EXC2'] + n['EXC3']} | {n['EXC2']} | {n['EXC3']} |")
     lines += [
         "",
         "## Defects",
@@ -1640,8 +1687,10 @@ def render_defects_md(m: dict) -> str:
         "### 6. Traceability gaps",
         "",
         f"{trace['count']} of {trace['total_grns']} goods receipts ({trace['share']:.0%}) are missing a heat number,",
-        "a mill certificate reference, or both. Under EN 1090-2 factory production control every",
-        "structural steel receipt must trace to a 3.1 certificate; this is an audit exposure.",
+        "a mill certificate reference, or both. EN 1090-2 (clause 5.2) requires steel on EXC3 and EXC4 work to be",
+        "traceable from receipt to hand over, and S355 to carry a 3.1 inspection document at every execution",
+        f"class: {len(trace['s355_grn_without_certificate'])} of these receipts are S355 steel with no mill "
+        "certificate.",
         "",
         "### 7. Labour variance",
         "",

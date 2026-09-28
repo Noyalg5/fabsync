@@ -147,26 +147,44 @@ def render_report(results: list[EngineResult], cfg: dict) -> str:
                    money={"value_error"})]
 
     # ---- traceability ----------------------------------------------------------------
-    tj = tr.tables["trace_jobs"]
+    tj, tl = tr.tables["trace_jobs"], tr.tables["trace_lines"]
+    by_exposure = (tl[tl.exposure.notna()].groupby(["exposure", "break_at"])
+                   .agg(lines=("line_id", "size"), kg=("kg", "sum")).reset_index())
+    by_class = (tj.groupby("execution_class").agg(jobs=("job_no", "size"), exposed=("en1090_exposure", "sum"),
+                                                   gap=("practice_gap", "sum")).reset_index())
     out += ["", "## 4. Material traceability", "",
             "Chain: mill certificate and heat number, goods receipt, material issue, works order, delivery note.",
             "Corvus records no material issues, so which receipt supplied which works order is reconstructed by "
             "allocating confirmed-grade receipts first-in first-out, in kg, to BOM lines. That the link has to be "
             "inferred at all is a finding. Rows: `recon.trace_lines`, one per BOM line on a started works order; "
-            "`recon.trace_allocations`, receipt to BOM line; `recon.trace_jobs` and `recon.trace_customers`.", "",
+            "`recon.trace_allocations`, receipt to BOM line; `recon.trace_receipts`, one per goods receipt; "
+            "`recon.trace_jobs` and `recon.trace_customers`.", "",
+            "What EN 1090-2 (clause 5.2) requires depends on the execution class the designer specified for the "
+            "structure, which Corvus records on every works order. On EXC3 and EXC4 work, steel must be traceable "
+            "from receipt to hand over, so any incomplete chain on steel already despatched is a compliance "
+            "exposure. On EXC2 work full traceability is not required, but S355 needs a 3.1 inspection document at "
+            "every class: S355 despatched on an EXC2 job with no certified receipt covering it is a compliance "
+            "exposure too. Any other incomplete chain on EXC2 work is a quality and good-practice gap, reported "
+            "separately.", "",
             *headline_block(tr), "",
+            "Jobs by execution class:", "",
+            *table(by_class, ["execution_class", "jobs", "exposed", "gap"],
+                   ["Execution class", "Jobs", "With a compliance exposure", "With a good-practice gap"]), "",
             "Where chains break:", "",
             *table(tr.summary, ["break_at", "lines", "kg", "exposed_lines"],
                    ["Break point", "BOM lines", "kg", "Already despatched"]), "",
+            "Despatched steel by what it means and where its chain breaks:", "",
+            *table(by_exposure, ["exposure", "break_at", "lines", "kg"], ["Meaning", "Break point", "BOM lines", "kg"]),
+            "",
             "A single receipt without a heat number or certificate taints every works order it supplied. Because "
             "one delivery of steel feeds many jobs, a minority of untraceable receipts reaches almost every job.",
-            "", "EN 1090 exposure by customer:", "",
+            "", "EN 1090 compliance exposure by customer:", "",
             *table(tr.tables["trace_customers"], ["customer_name", "exposed_jobs", "exposed_lines", "exposed_kg",
                                                   "sales_value"],
-                   ["Customer", "Jobs", "BOM lines", "Untraceable kg", "Sales value"], money={"sales_value"}), "",
-            "Top 15 exposed jobs:", "",
-            *table(tj[tj.en1090_exposure].head(15), ["job_no", "customer_name", "coverage", "exposed_lines",
-                                                     "exposed_kg", "tonnage_despatched"],
-                   ["Job", "Customer", "Coverage", "Exposed lines", "Untraceable kg", "Tonnes despatched"],
+                   ["Customer", "Jobs", "BOM lines", "Exposed kg", "Sales value"], money={"sales_value"}), "",
+            "Top 15 jobs with a compliance exposure:", "",
+            *table(tj[tj.en1090_exposure].head(15), ["job_no", "execution_class", "customer_name", "coverage",
+                                                     "exposed_lines", "exposed_kg", "tonnage_despatched"],
+                   ["Job", "Class", "Customer", "Coverage", "Exposed lines", "Exposed kg", "Tonnes despatched"],
                    pct={"coverage"}), ""]
     return "\n".join(out)

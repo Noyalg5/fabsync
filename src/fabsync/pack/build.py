@@ -97,10 +97,11 @@ def make_figures(f: Facts) -> list[tuple[str, str, Figure]]:
             [f"{t:,.0f} t  ({n:,} BOM lines)" for t, n in zip(br.tonnes, br.lines, strict=True)],
             "Steel where the chain first breaks (tonnes)")),
         ("trace_customers", "09-traceability-by-customer", lambda: charts.bar_h(
-            f"Despatched steel without full traceability, the {f.rows['trace_customers']} most exposed customers",
+            f"Despatched steel with an EN 1090 compliance exposure, the {f.rows['trace_customers']} most exposed "
+            "customers",
             list(cu.customer_name), cu.tonnes,
             [f"{t:,.0f} t  ({j} jobs)" for t, j in zip(cu.tonnes, cu.exposed_jobs, strict=True)],
-            "Steel without full traceability (tonnes)", row=0.17)),
+            "Steel with a compliance exposure (tonnes)", row=0.17)),
         ("architecture", "10-target-architecture", architecture),
         ("dq_by_owner", "11-data-quality-by-owner", lambda: charts.bar_h(
             "Data quality index by owning role",

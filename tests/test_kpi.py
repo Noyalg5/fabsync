@@ -131,7 +131,9 @@ def test_kpis_agree_with_reconciliation(built) -> None:
     _, result, con = built
     head = dict(con.execute("SELECT engine || '.' || key, value FROM recon.headline").fetchall())
     assert abs(value(result, "KPI-04") - head["stock.line_accuracy"]) < 0.06
-    assert abs(value(result, "KPI-06") - head["traceability.coverage"]) < 0.06
+    assert abs(value(result, "KPI-06") - head["traceability.coverage_exc3"]) < 0.06
+    exc2 = result.scorecard.set_index("kpi_id").loc["KPI-06", "secondary_value"]
+    assert abs(exc2 - head["traceability.coverage_exc2"]) < 0.06
     secondary = result.scorecard.set_index("kpi_id").loc["KPI-05", "secondary_value"]
     assert abs(secondary - head["three_way.value_at_risk"]) < 0.01
 

@@ -83,6 +83,8 @@ def fields(f: Facts, con: duckdb.DuckDBPyConnection) -> dict[str, Callable[[], s
         "extract_date": extract_date,
         "files": lambda: f"{f.source['files']:.0f}",
         "date_formats": lambda: word(query(con, "date_formats")),
+        "exc3_jobs": lambda: f"{f.fig['exc3_jobs']:.0f}",
+        "exc2_jobs": lambda: f"{f.fig['exc2_jobs']:.0f}",
         "defects": lambda: f"{count(len(defects), 'document', 'docs/project-brief.md, table of registered defects')}",
         "raw_rows_rounded": lambda: f"{round(f.source['raw_rows'], -3):,.0f}",
         "qty_tolerance": lambda: f"{f.reconcile['three_way']['qty_tolerance']:.0%}",

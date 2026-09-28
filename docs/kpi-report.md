@@ -13,7 +13,7 @@ As at 2026-08-31. Definitions, formulas and sources are in `docs/data-dictionary
 | KPI-03 Material yield and offcut waste | **76.2%** | >= 85% | off target |  | Production Controller |
 | KPI-04 Stock accuracy | **89.6%** | >= 95% | off target |  | Production Controller |
 | KPI-05 Three-way match exception rate | **53.8%** | <= 5% | off target | Value at risk: £4,314,978 | Finance Manager |
-| KPI-06 Material traceability coverage | **68.7%** | >= 100% | off target |  | Quality Manager |
+| KPI-06 Material traceability coverage on EXC3 work | **66.4%** | >= 100% | off target | Coverage on EXC2 work: 69.9% | Quality Manager |
 | KPI-07 WIP value and ageing | **£714,137** | no target | for information | Share of WIP over 90 days: 54.9% | Finance Manager |
 | KPI-08 Capacity utilisation | **86.1%** | 75% to 95% | on target |  | Production Controller |
 | KPI-09 NCR rate and cost of quality | **1.3%** | <= 2% | on target | NCRs per 100 tonnes despatched: 7.16 | Quality Manager |
@@ -118,13 +118,13 @@ Value at risk by category:
 | price variance | 53 | 59,426.59 | 42 |
 | matched | 492 | 0 | 0 |
 
-## KPI-06 Material traceability coverage
+## KPI-06 Material traceability coverage on EXC3 work
 
-**68.7%**. Target >= 100%: off target.
+**66.4%**. Target >= 100%: off target. Coverage on EXC2 work: 69.9%.
 
-The share of steel used on our works orders that we can trace back to the mill certificate and cast it came from.
+The share of steel used on our EXC3 works orders that we can trace back to the mill certificate and cast it came from.
 
-> **Caveat.** Corvus records no material issues, so which delivery went into which works order is inferred by allocating deliveries first-in first-out. A real audit would need the cutting lists. A chain that shows as complete here has the right references on file; that does not prove the certificates were checked or the steel physically marked. The target is 100%, because EN 1090 allows no gaps.
+> **Caveat.** Corvus records no material issues, so which delivery went into which works order is inferred by allocating deliveries first-in first-out. A real audit would need the cutting lists. A chain that shows as complete here has the right references on file; that does not prove the certificates were checked or the steel physically marked. The target is 100% on EXC3 work, where EN 1090-2 requires traceability from receipt to hand over. On EXC2 work it is good practice, not a requirement, so that figure has no target; S355 still needs a 3.1 inspection document at every class.
 
 By site:
 

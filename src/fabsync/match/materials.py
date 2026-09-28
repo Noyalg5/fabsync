@@ -8,8 +8,8 @@ dimensions and grade, and mapped to one canonical code in the Corvus house form
 (``UB203X133X25-S355J2``, ``PLT12-S355J2``).
 
 Grade is the hard part. A code with no grade on a purchase order cannot say
-whether the steel is S275JR or S355J2, and under EN 1090 that is a traceability
-question, not a formatting one. Grade is taken, in this order, from: the BOM
+whether the steel is S275JR or S355J2. On EXC3 work, and for S355 at any execution
+class, EN 1090 makes that a traceability question, not a formatting one. Grade is taken, in this order, from: the BOM
 grade column, the grade in the code, the grade in the description. Only if all
 are silent is it inferred, and then only when the designation is stocked in a
 single grade; otherwise the candidates go to the review queue.

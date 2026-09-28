@@ -51,7 +51,7 @@ FRAME_W = A4[0] - 2 * MARGIN_X
 FRAME_H = A4[1] - MARGIN_TOP - MARGIN_BOTTOM
 
 # Terms restated on the one-page summary, so it can be left behind on its own.
-LEAVE_BEHIND_TERMS = ["value_at_risk", "dqi", "traceability", "en1090", "corvus", "works_order", "modelled"]
+LEAVE_BEHIND_TERMS = ["value_at_risk", "dqi", "traceability", "en1090", "exc", "corvus", "works_order", "modelled"]
 
 # The contents, in page order: section title, page it starts on.
 CONTENTS = [
@@ -262,18 +262,21 @@ class Pack:
             ("Data quality index, out of 100", f"{dq['dq_index']:.1f}",
              f"{dqi[0].upper()}{dqi[1:]}. {dq['rules_met']:.0f} of "
              f"{dq['rules_run']:.0f} rules are met, and {dq['critical_breaches']:.0f} critical rules are broken."),
-            ("Tonnes of steel that cannot be traced", f"{self.h('traceability', 'exposed_kg'):,.0f}",
+            ("Tonnes of steel with a compliance exposure", f"{self.h('traceability', 'exposed_kg'):,.0f}",
              f"Despatched on {self.h('traceability', 'exposed_jobs'):.0f} jobs for "
-             f"{self.h('traceability', 'exposed_customers'):.0f} customers without full "
-             f"{g('traceability')}."),
+             f"{self.h('traceability', 'exposed_customers'):.0f} customers without the "
+             f"{g('traceability')} their structures require."),
         ])
         worth = [r for r in f.benefits["pounds"] if r[0].startswith("**Total")][0]
         phases = f.roadmap["phases"]
         return self.page_head("Executive summary", "Three numbers that matter", None) + [
             tiles, Spacer(1, 3 * mm),
-            self.p(f"Structural steelwork cannot be sold without {g('en1090')} certification, and certification "
-                   "rests on traceability. Every tonne in the third figure is an audit finding waiting to happen.",
-                   "body"),
+            self.p(f"Structural steelwork cannot be sold without {g('en1090')} certification. What the standard "
+                   f"asks of the records depends on each structure's {g('exc')}: full traceability from receipt to "
+                   "hand over on EXC3 work, and a 3.1 certificate for S355 at every class. Every tonne in the third "
+                   "figure fails one or the other, and is an audit finding waiting to happen. A further "
+                   f"{self.h('traceability', 'gap_kg'):,.0f} tonnes on EXC2 work have incomplete chains: a "
+                   "good-practice gap, not a breach.", "body"),
             self.p("What is wrong", "h2"),
             self.p(f"The business runs on {word(f.systems)} systems that do not share data: {g('corvus')}, the "
                    "finance system, and spreadsheets kept by the supervisors at each site. Each has drifted from the "
@@ -452,21 +455,29 @@ class Pack:
             "is accurate only if the two agree exactly; the difference is valued at the line's unit cost.",
             self.cfg(kcav["KPI-04"], "kpis.yaml caveat"), 118 * mm)
         pages += self.finding(
-            4, f"{h('traceability', 'exposed_kg'):,.0f} tonnes of steel have gone out without full traceability",
-            [("Traceability coverage", f"{h('traceability', 'coverage'):.1f}%", "Of steel used, by weight"),
+            4, f"{h('traceability', 'exposed_kg'):,.0f} tonnes of steel have gone out without the traceability "
+               "EN 1090 requires",
+            [("EXC3 steel, chain incomplete", f"{h('traceability', 'exposed_kg_exc3'):,.0f} t",
+              f"Coverage on EXC3 work is {h('traceability', 'coverage_exc3'):.1f}%"),
+             ("S355 with no 3.1 certificate", f"{h('traceability', 'exposed_kg_s355'):,.0f} t", "On EXC2 jobs"),
              ("Jobs exposed", f"{h('traceability', 'exposed_jobs'):.0f}",
-              f"For {h('traceability', 'exposed_customers'):.0f} customers"),
-             ("Sales on those jobs", money(h("traceability", "exposed_sales")), "Already despatched")],
+              f"For {h('traceability', 'exposed_customers'):.0f} customers; "
+              f"{money(h('traceability', 'exposed_sales'))} of sales")],
             ["trace_breaks", "trace_customers"],
-            "Each tonne here is steel on a customer's site whose certificate cannot be produced on request. "
-            "Under EN 1090 that is a nonconformity: a surveillance audit can suspend certification, and without "
-            "certification the steelwork cannot be sold. Most chains break at goods-in, where the heat number or "
+            "Each tonne here is steel on a customer's site that falls short of EN 1090 for the structure it went "
+            "into: on EXC3 work its chain back to the mill certificate is incomplete, and on EXC2 work it is S355 "
+            "with no 3.1 certificate that can be shown. Either is a nonconformity: a surveillance audit can "
+            "suspend certification, and without certification the steelwork cannot be sold. A further "
+            f"{h('traceability', 'gap_kg'):,.0f} tonnes on EXC2 work have incomplete chains, which the standard "
+            "does not require but good practice does. Most chains break at goods-in, where the heat number or "
             "certificate was never recorded, so the fix starts there.",
             "Each finished assembly was followed back through its works order and BOM to the delivery that "
             "supplied the steel, and from the delivery to its heat number and certificate. Production records "
             "no issues of steel to works orders, so which delivery went into which job was reconstructed "
             f"{g('first_in')}. The shop's {g('cutting_list', 'cutting lists')} would settle it, but they are not "
-            "kept with the records. A chain is complete only if every link has its reference on file.",
+            "kept with the records. A chain is complete only if every link has its reference on file. Each job's "
+            "execution class is read from its works orders, and S355 counts as certified only where certified "
+            "receipts cover all of it.",
             self.cfg(kcav["KPI-06"], "kpis.yaml caveat"), 58 * mm)
         return pages
 
@@ -688,7 +699,8 @@ class Pack:
             ("Stock", f"{self.h('stock', 'line_accuracy'):.1f}% of counted lines agree with the book, against "
                       f"{f.reconcile['stock']['accuracy_target']:.0%}."),
             ("Traceability", f"{self.h('traceability', 'exposed_kg'):,.0f} tonnes on "
-                             f"{self.h('traceability', 'exposed_jobs'):.0f} jobs cannot be traced to certificate."),
+                             f"{self.h('traceability', 'exposed_jobs'):.0f} jobs fall short of EN 1090 for their "
+                             "execution class."),
         ]
         return self.page_head("The pack on one page", "FabSync on one page",
                               f"<b>{SYNTHETIC}</b> Figures as at {self.date()}.") + [
@@ -696,7 +708,7 @@ class Pack:
                 ("Value at risk", money(self.h("three_way", "value_at_risk")), "Purchasing that does not match"),
                 ("Data quality index", f"{f.dq['dq_index']:.1f} / 100",
                  f"{f.dq['critical_breaches']:.0f} critical rules broken"),
-                ("Untraceable steel", f"{self.h('traceability', 'exposed_kg'):,.0f} t",
+                ("EN 1090 exposure", f"{self.h('traceability', 'exposed_kg'):,.0f} t",
                  "Already on customers' sites"),
             ], "number_small"), Spacer(1, 2 * mm),
             self.p("The problem", "h2"),

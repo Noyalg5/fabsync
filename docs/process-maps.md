@@ -28,7 +28,9 @@ money in the bank, and which system or piece of paper each step lives in.
 ![Order to cash, as-is](diagrams/as-is-order-to-cash.png)
 
 A customer order becomes a job in Corvus MRP, the manufacturing system that plans works orders,
-material and stock. The same job is keyed again into the finance system under a different number
+material and stock. Each job's works orders carry the **execution class** its designer specified,
+EXC2 or EXC3 under EN 1090-2, which sets how much traceability the standard requires: 53
+jobs are EXC3 and 97 EXC2. The same job is keyed again into the finance system under a different number
 format. Drawings become a bill of material (BOM), the list of steel and fittings each assembly
 needs, and the BOM becomes works orders. On the shop floor, operators book their hours against
 works orders on spreadsheets. Supervisors log non-conformances (NCRs, records of defects and their
@@ -40,7 +42,7 @@ allocates labour cost from payroll, separately from the hours operators booked.
 | Job set-up | Job J-24-0871 is typed into finance as 24871 | Finance jobs with no production record | 20 job codes; £236k of cost |
 | Time booking | Works order numbers typed by hand on booking sheets | Hours booked to works orders that do not exist; unreadable rows | 6 works orders, 242 hours; 189 rows quarantined |
 | Labour costing | Finance allocates payroll hours without reference to bookings | Labour cost on a job disagrees with hours worked | £248k across jobs; 30 jobs out by more than 15% |
-| Despatch | Delivery notes carry no works order or heat number, and some no promised date | On-time delivery cannot be measured reliably, and traceability ends at the yard gate | OTIF 16.7%; 30 notes without a promised date; 1,103 tonnes despatched untraceable |
+| Despatch | Delivery notes carry no works order or heat number, and some no promised date | On-time delivery cannot be measured reliably, and traceability ends at the yard gate | OTIF 16.7%; 30 notes without a promised date; 786 tonnes on site with an EN 1090 compliance exposure |
 | NCRs | Cost of each defect typed into a log, often left blank | Cost of quality understated | 45 of 246 NCRs uncosted |
 | Invoicing | Invoices raised on job codes Corvus does not hold | Revenue not tied to the work that earned it | 32 invoices, £2.02m |
 | Job margin | Steel charged to one job but used on several; works orders left open | Wrong job margins; WIP overstated | £1.43m of material on the wrong job; WIP £714k, 54.9% over 90 days |
@@ -63,14 +65,19 @@ Corvus records nothing, so which delivery went into which job is not known. Fina
 supplier invoice by hand, picking one of several accounts for the same supplier. They then check
 by eye that the order, the receipt and the invoice agree. This check is the **three-way match**.
 
+What EN 1090-2 asks of these records depends on the execution class. On EXC3 work the steel must be
+traceable from receipt to hand over, so every broken chain on steel already despatched is a
+compliance exposure. On EXC2 work full traceability is good practice rather than a requirement, but
+S355 still needs a 3.1 inspection document, the mill certificate type every receipt should carry.
+
 | Break point | What happens | Defect it causes | Measured |
 | --- | --- | --- | --- |
 | Supplier | Supplier name typed on each order; separate accounts in finance | One supplier under several records | 5 confirmed, 3 more likely |
 | Material code | Codes chosen freely; grade often left off | Same steel under several codes; grade unknown | 18 materials written several ways; 246 order and receipt lines without a grade |
 | Units | Steel ordered in kg, stocked in bars, issued in metres | Stock cannot be reconciled | 14 materials in three units; stock accuracy 89.6%, £15k miscounted |
 | Services | Galvanising, paint, erection ordered by phone | Spend with no order to check the invoice against | 726 invoices, £3.41m |
-| Goods-in | Heat number and certificate typed from paper | Steel that cannot be traced to its certificate | 178 receipts; traceability coverage 68.7% |
-| Issue to job | Nothing recorded | Which steel went into which job can only be inferred | 148 despatched jobs exposed; £14.47m of sales on them |
+| Goods-in | Heat number and certificate typed from paper | Steel that cannot be traced to its certificate, and S355 with no 3.1 certificate | 178 receipts, 69 of them S355 with no 3.1 certificate; traceability coverage 66.4% on EXC3 work, 69.9% on EXC2 |
+| Issue to job | Nothing recorded | Which steel went into which job can only be inferred | 145 despatched jobs with an EN 1090 compliance exposure, £14.35m of sales: 384 tonnes of EXC3 steel without a complete chain and 402 tonnes of S355 on EXC2 work with no 3.1 certificate shown. A further 316 tonnes on EXC2 work is a good-practice gap |
 | Receipt | Short deliveries booked without challenge | Paying for steel not received, or not noticing it | 373 lines, £115k |
 | Invoice entry | Invoice typed against the order by hand | Overcharges paid | 53 price variances, £59k |
 | Three-way match | Done by eye, when there is time | Orders never received; receipts never invoiced | 82 orders, £304k committed; 66 receipts, £428k unaccrued; 1,074 older than 90 days |

@@ -48,7 +48,7 @@ measure is taken, through a new definition or more complete data, without claimi
 | KPI-03 Material yield and offcut waste | | | | ● ○ | |
 | KPI-04 Stock accuracy | | ● | | ● | |
 | KPI-05 Three-way match exception rate | | ● | ● | ● | |
-| KPI-06 Material traceability coverage | ● | ● | | ● ○ | |
+| KPI-06 Material traceability coverage on EXC3 work | ● | ● | | ● ○ | |
 | KPI-07 WIP value and ageing | | ● | | ○ | |
 | KPI-08 Capacity utilisation | | | | ○ | |
 | KPI-09 NCR rate and cost of quality | ● | | | ○ | |
@@ -85,7 +85,7 @@ changes at once.
 | S-05 | Three-way match exceptions older than 90 days | 1,074 | None without an owner's decision | 8 | Each chased, accrued, credited or written off with approval | Medium |
 | KPI-04 | Stock accuracy | 89.6% | 95% | 9 | Every line not counted in 90 days is recounted and every material gets one stocking unit. On the 106 counted lines, 95% allows 5 lines out, against 11 today. | Medium |
 | KPI-07 | Share of WIP value over 90 days old | 54.9% of £714k | 32.8% | 9 | Works orders whose work has gone are closed. A5 puts 60% of the over-90-day value in that admin backlog, leaving 40% of £392k in a total that falls by the rest. The prototype cannot measure the backlog, because delivery notes do not name works orders. | Low |
-| DQI | Data quality index | 92.2 | Master data rules DQ-04, DQ-05, DQ-07, DQ-08, DQ-09 and DQ-10 at threshold | 8 | Phase 2 exit criterion | Medium |
+| DQI | Data quality index | 92.1 | Master data rules DQ-04, DQ-05, DQ-07, DQ-08, DQ-09 and DQ-10 at threshold | 8 | Phase 2 exit criterion | Medium |
 
 ### Phase 3. Read-only integration and reporting (months 5 to 10)
 
@@ -105,7 +105,7 @@ measurable.
 
 | ID | Measure | Baseline, measured (synthetic) | Target, modelled | By month | Basis of the estimate | Confidence |
 | --- | --- | --- | --- | :-: | --- | --- |
-| KPI-06 | Material traceability coverage | 68.7% | At least 99% on works orders started after go-live | 15 | Issues recorded from cutting lists replace the first-in first-out inference, and the heat number travels with cut pieces and offcuts | Medium |
+| KPI-06 | Material traceability coverage on EXC3 work | 66.4% | At least 99% on EXC3 works orders started after go-live | 15 | Issues recorded from cutting lists replace the first-in first-out inference, and the heat number travels with cut pieces and offcuts | Medium |
 | S-08 | Material cost charged to the wrong job | £1.43m over 24 months | Under 2% of material cost on jobs started after month 14 | 18 | Steel is charged from the issue, which removes the mechanism that creates the gap | High |
 | S-09 | Hours booked to works orders not in Corvus | 242 hours | 0 | 11 | The form accepts only live works orders | High |
 | S-10 | NCRs with no cost | 45 of 246 | Every NCR costed within 7 days | 13 | The NCR form reminds the Quality Manager after 7 days | High |
@@ -122,7 +122,7 @@ measurable.
 
 | ID | Measure | Baseline, measured (synthetic) | Target, modelled | By month | Basis of the estimate | Confidence |
 | --- | --- | --- | --- | :-: | --- | --- |
-| DQI | Data quality index | 92.2 | 98.0, held for three months | 18 | 98.0 is the index the prototype would score if every critical and high rule met its threshold and the medium and low rules stayed as they are today. The Phase 2 and Phase 4 exit criteria bring those rules to threshold, and Phase 5 shows they stay there without the programme team. | Medium |
+| DQI | Data quality index | 92.1 | 98.1, held for three months | 18 | 98.1 is the index the prototype would score if every critical and high rule met its threshold and the medium and low rules stayed as they are today. The Phase 2 and Phase 4 exit criteria bring those rules to threshold, and Phase 5 shows they stay there without the programme team. | Medium |
 
 ## Summary at month 18
 
@@ -136,11 +136,11 @@ modelled.*
 | KPI-03 | Material yield and offcut waste | 76.2% | `marts.kpi_scorecard` | 85% or more | Restated baseline plus 2 points | Phase 4 |
 | KPI-04 | Stock accuracy | 89.6% | `marts.kpi_scorecard` | 95% or more | 95% | Phases 2 and 4 |
 | KPI-05 | Three-way match exception rate | 53.8% | `marts.kpi_scorecard` | 5% or less | 11.5% | Phases 2, 3 and 4 |
-| KPI-06 | Material traceability coverage | 68.7% | `marts.kpi_scorecard` | 100% | 100% on new receipts; at least 99% on new works orders | Phases 1, 2 and 4 |
+| KPI-06 | Material traceability coverage on EXC3 work | 66.4% | `marts.kpi_scorecard` | 100% | 100% on new receipts; at least 99% on new EXC3 works orders | Phases 1, 2 and 4 |
 | KPI-07 | WIP value and ageing | 54.9% over 90 days | `marts.kpi_scorecard` | No target | 32.8% over 90 days | Phase 2 |
 | KPI-08 | Capacity utilisation | 86.1% | `marts.kpi_scorecard` | 75% to 95% | Within 75% to 95%, from one source | Measured better, not moved |
 | KPI-09 | NCR rate and cost of quality | 1.3% | `marts.kpi_scorecard` | 2% or less | Every NCR costed; missing-certificate NCR cost 75% lower | Phases 1 and 4 |
-| DQI | Data quality index | 92.2 | `governance.dq_results` | No target | 98.0 | Phases 2 to 5 |
+| DQI | Data quality index | 92.1 | `governance.dq_results` | No target | 98.1 | Phases 2 to 5 |
 
 The OTIF target shows why the labels matter. The standard is 95%, while the programme's modelled target
 is 37.5%, resting on an assumption. Presenting the programme as the route to 95% would be the kind of
@@ -181,7 +181,7 @@ These are real measured figures that are easy to turn into large, false savings.
 | Goods received but not invoiced | £428k | Accruals become accurate. The money is owed either way. |
 | Stock value error | £15k | The book becomes accurate. Adjustments go both ways. |
 | Hours booked to works orders not in Corvus | 242 hours | The cost moves to the right job. Nothing is saved. |
-| Sales on jobs with incomplete traceability | £14.47m | This is the value of work exposed, not a loss. Keeping certification is a licence to trade, and it is not priced here. |
+| Sales on jobs with an EN 1090 compliance exposure | £14.35m | This is the value of work exposed, not a loss. Keeping certification is a licence to trade, and it is not priced here. |
 | Office time spent re-keying | Not measured | Phase 1 times it. It is claimed only once measured, and only if the hours are redeployed. |
 
 ## Figures that will look worse before they look better

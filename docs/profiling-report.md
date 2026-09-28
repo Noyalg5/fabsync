@@ -16,7 +16,7 @@ guess disagrees with the contract, so loading without a contract would mistype t
 
 | System | Table | Rows | Blank cells | Exact duplicates | Duplicate keys | Type mismatches | Anomalies |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Corvus MRP (MRPII) | `works_orders` | 860 | 135 (1.2%) | 0 | 0 | 0 | 4 |
+| Corvus MRP (MRPII) | `works_orders` | 860 | 135 (1.1%) | 0 | 0 | 0 | 4 |
 | Corvus MRP (MRPII) | `bom_lines` | 5,933 | 0 (0.0%) | 0 | 0 | 0 | 4 |
 | Corvus MRP (MRPII) | `stock` | 106 | 0 (0.0%) | 0 | 0 | 0 | 4 |
 | Corvus MRP (MRPII) | `purchase_orders` | 1,104 | 0 (0.0%) | 0 | 0 | 0 | 3 |
@@ -91,6 +91,7 @@ File `corvus_mrp/works_orders.csv`, 860 rows. Natural key: wo_no.
 | 11 | `actual_finish` | date | date | 15.7% | 447 |  |
 | 12 | `status` | text | text | 0.0% | 6 | 1 |
 | 13 | `site` | text | text | 0.0% | 2 |  |
+| 14 | `execution_class` | text | text | 0.0% | 2 |  |
 
 | Column | Anomaly | Values | Sample |
 | --- | --- | ---: | --- |

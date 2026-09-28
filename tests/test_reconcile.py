@@ -236,6 +236,41 @@ def test_exposure_by_job_and_customer(reconciled) -> None:
     assert 0 < coverage < 100
 
 
+def test_exposure_follows_the_execution_class(reconciled) -> None:
+    """EN 1090-2 5.2: full traceability on EXC3; on EXC2 only a 3.1 document for S355, the rest good practice."""
+    _, manifest, _, con = reconciled
+    lines = df(con, "SELECT * FROM recon.trace_lines")
+    jobs = manifest["scenario"]["execution_class"]["jobs"]
+    assert (lines.execution_class == lines.job_no.map(jobs)).all(), "every line carries its job's class"
+    broken = lines.despatched & ~lines.material_chain_complete
+    exc3 = lines.execution_class == "EXC3"
+    s355_unshown = lines.grade.str.startswith("S355") & ~(lines.cert_ok & (lines.kg_short <= 0.5))
+    assert (lines.exposure == "EN 1090: EXC3 chain incomplete").equals(broken & exc3)
+    s355_exposed = lines.exposure == "EN 1090: S355 with no 3.1 document shown"
+    assert s355_exposed.equals(lines.despatched & ~exc3 & s355_unshown)
+    assert lines.practice_gap.equals(broken & ~exc3 & ~s355_unshown)
+    assert not (lines.practice_gap & lines.compliance_exposure).any()
+    assert (lines.compliance_exposure | lines.practice_gap).equals(broken), "every despatched break is one or other"
+    s275_no_cert = lines.practice_gap & lines.grade.str.startswith("S275") & ~lines.cert_ok
+    assert s275_no_cert.any(), "on EXC2 work, S275 without a certificate is good practice, not the standard"
+    head = dict(con.execute("SELECT key, value FROM recon.headline WHERE engine = 'traceability'").fetchall())
+    assert abs(head["exposed_kg"] - head["exposed_kg_exc3"] - head["exposed_kg_s355"]) < 0.002
+    exc3_kg = lines[exc3]
+    assert abs(head["coverage_exc3"] - round(100 * exc3_kg[exc3_kg.material_chain_complete].kg.sum()
+                                             / exc3_kg.kg.sum(), 2)) < 0.01
+
+
+def test_every_s355_receipt_is_checked_for_a_31_document_at_every_class(reconciled) -> None:
+    _, manifest, _, con = reconciled
+    receipts = df(con, "SELECT * FROM recon.trace_receipts")
+    assert len(receipts) == one(con, "SELECT count(*) FROM staging.corvus_mrp_goods_received")
+    planted = set(manifest["defects"]["6_traceability_gaps"]["s355_grn_without_certificate"])
+    flagged = set(receipts[receipts.s355 & ~receipts.document_31].grn_no)
+    unconfirmed = set(receipts[receipts.grade.isna()].grn_no)
+    assert flagged <= planted and planted - flagged <= unconfirmed, "only a receipt whose grade is not stated escapes"
+    assert flagged, "DQ-41 in tests/test_defects.py flags the same receipts"
+
+
 # ---- idempotency ------------------------------------------------------------------------- #
 
 def test_rerun_is_identical(reconciled, tmp_path) -> None:

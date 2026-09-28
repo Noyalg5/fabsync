@@ -30,7 +30,8 @@ Every BOM line resolves, because the BOM carries a grade column. Codes on purcha
 received and stock that omit the grade cannot be resolved from the data: where the section is held in
 one grade the grade is proposed for confirmation; where it is held in several, a person must read the
 mill certificate. Those review items cover 246 purchase order and goods received lines, each needing its own
-certificate check. This is an EN 1090 traceability exposure, not a formatting problem.
+certificate check. On EXC3 work that is an EN 1090 traceability exposure, and S355 needs its 3.1
+certificate at every execution class: it is not a formatting problem.
 
 | Method | Status | Values | Rows |
 | --- | --- | --- | --- |

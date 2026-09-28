@@ -88,7 +88,7 @@ figures change.
 | Section | A rolled steel profile: UB (universal beam), UC (universal column), PFC (parallel flange channel), RHS/SHS/CHS (hollow sections), angle, flat. Specified by designation and mass per metre, e.g. 254x146x31 UB. |
 | Plate | Flat steel by thickness and grade, cut to profiles for cleats, baseplates, gussets. |
 | Grade | Steel grade to EN 10025, e.g. S275JR, S355J2. |
-| Heat number | The steel mill's cast identifier; links a piece of steel to its mill certificate. Must be traceable from stock to finished assembly. |
+| Heat number | The steel mill's cast identifier; links a piece of steel to its mill certificate. On EXC3 and EXC4 work it must be traceable from receipt to hand over. |
 | Mill certificate | Inspection document (EN 10204 type 3.1) from the mill stating chemistry and mechanical properties for a heat. |
 | Goods received note (GRN) | Record that purchased material arrived, was checked and booked to stock, with heat numbers captured. |
 | Purchase order (PO) | Order to a stockholder or mill for sections, plate, bolts or consumables. |
@@ -101,7 +101,7 @@ figures change.
 | Fit-up | Positioning and tacking parts before full welding. |
 | Weld procedure specification (WPS) | Qualified procedure a welder must follow; welder qualification (EN ISO 9606-1) must match. |
 | EN 1090 | Standard for execution of steel and aluminium structures; EN 1090-2 governs structural steel. Factory production control certification is required to UKCA/CE mark structural steelwork. |
-| Execution class (EXC) | EXC1 to EXC4 under EN 1090-2; sets inspection and traceability requirements. Telecoms masts and rail structures often sit at EXC3. |
+| Execution class (EXC) | EXC1 to EXC4 under EN 1090-2, specified by the designer per structure; sets inspection and traceability requirements. Clause 5.2: EXC3 and EXC4 need constituent products traceable from receipt to hand over; at EXC2, S355 needs a 3.1 inspection document and mixed grades must be marked, but full traceability is not required. Telecoms masts and rail structures often sit at EXC3. |
 | Inspection and test plan (ITP) | Agreed sequence of inspections and hold points for a contract. |
 | Non-conformance report (NCR) | Record of a defect or deviation: wrong revision, missing mill certificate, weld defect, dimensional error. Has a disposition: rework, use-as-is, scrap. |
 | Rework | Corrective fabrication after an NCR; consumes hours not planned in the works order. |
@@ -134,6 +134,9 @@ and the exact identifiers they touch are written to `data/raw/DEFECTS.md` and
 `data/raw/defects.json`; `tests/test_generate_sources.py` asserts each one is
 present, and `tests/test_defects.py` reads `DEFECTS.md` as the expected set and
 fails if any stage misses a planted defect or flags one that was not planted.
+Every job also carries an execution class, EXC2 or EXC3, drawn by kind of project
+from its own random stream and written on its works orders; `DEFECTS.md` records
+the mix under Scenario, as a property of the scenario, not a defect.
 
 | # | Defect | Where |
 | --- | --- | --- |
@@ -235,7 +238,11 @@ result set, a summary, an exposure figure and headline figures.
   against the 95% target.
 - **Traceability:** Corvus holds no material issues, so receipts are allocated to BOM lines
   first-in first-out (`recon.trace_allocations`). `recon.trace_lines` records where each chain
-  breaks. `recon.trace_jobs` and `recon.trace_customers` show the EN 1090 exposure.
+  breaks. Each job carries the execution class from its works orders: incomplete chains on EXC3
+  jobs, and S355 on EXC2 jobs with no 3.1 certificate shown, are the EN 1090 compliance exposure
+  (`recon.trace_jobs`, `recon.trace_customers`); other incomplete chains on EXC2 jobs are a
+  good-practice gap, reported separately. `recon.trace_receipts` checks every S355 receipt for a
+  3.1 certificate, at every class.
 - **Drill-down:** the Reconciliation page in the app goes from headline to rows to source line.
 
 ## KPIs

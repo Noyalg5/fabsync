@@ -17,7 +17,7 @@ heads = ui.q("SELECT * FROM recon.headline ORDER BY ordinal")
 LEAD = {"three_way": ("value_at_risk", "Purchase-to-pay value at risk"),
         "job_cost": ("gross_gap", "Job cost that does not reconcile"),
         "stock": ("value_error", "Stock value miscounted"),
-        "traceability": ("exposed_kg", "Steel despatched without full traceability")}
+        "traceability": ("exposed_kg", "Steel on site with an EN 1090 compliance exposure")}
 TITLE = {"three_way": "Three-way match", "job_cost": "Job cost", "stock": "Stock accuracy",
          "traceability": "Material traceability"}
 
@@ -76,15 +76,23 @@ with tabs[2]:
     figures("stock")
 
 with tabs[3]:
-    lead("traceability", "Mill certificate and heat number, through receipt and issue, to works order and despatch")
-    st.markdown("Corvus records no material issues, so which delivery supplied which works order is reconstructed "
+    lead("traceability", "EXC3 steel whose chain back to the mill certificate is incomplete, and S355 on EXC2 work "
+                         "with no 3.1 certificate")
+    st.markdown("What EN 1090-2 requires depends on each job's execution class, recorded on its works orders. On "
+                "EXC3 work every piece must be traceable from receipt to hand over; on EXC2 work full traceability is "
+                "good practice rather than a requirement, but S355 still needs a 3.1 inspection document. Corvus "
+                "records no material issues, so which delivery supplied which works order is reconstructed "
                 "first-in first-out. One untraceable delivery taints every job it fed.")
+    meaning = ui.q("SELECT exposure, count(*) AS lines, sum(kg) / 1000 AS tonnes FROM recon.trace_lines "
+                   "WHERE exposure IS NOT NULL GROUP BY 1")
+    meaning["label"] = [f"{t:,.0f} t  ({n:,} BOM lines)" for t, n in zip(meaning.tonnes, meaning.lines, strict=True)]
+    ui.bar_h(meaning, "exposure", "tonnes", "Despatched steel by what its gap means (tonnes)", label="label")
     breaks = ui.q("SELECT break_at, lines, kg / 1000 AS tonnes FROM recon.trace_breaks WHERE break_at <> 'complete'")
     breaks["label"] = [f"{t:,.0f} t  ({n:,} BOM lines)" for t, n in zip(breaks.tonnes, breaks.lines, strict=True)]
     ui.bar_h(breaks, "break_at", "tonnes", "Steel where the chain first breaks (tonnes)", label="label")
     cust = ui.q("SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers "
                 "ORDER BY exposed_kg DESC LIMIT 12")
     cust["label"] = [f"{t:,.0f} t  ({j} jobs)" for t, j in zip(cust.tonnes, cust.exposed_jobs, strict=True)]
-    st.markdown("**EN 1090 exposure by customer, top 12**")
-    ui.bar_h(cust, "customer_name", "tonnes", "Despatched steel without full traceability (tonnes)", label="label")
+    st.markdown("**EN 1090 compliance exposure by customer, top 12**")
+    ui.bar_h(cust, "customer_name", "tonnes", "Steel with a compliance exposure (tonnes)", label="label")
     figures("traceability")

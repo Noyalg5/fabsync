@@ -48,8 +48,8 @@ flowchart TB
   B1{{"Supplier name typed; no supplier master<br/>{{supplier_dupes_confirmed}} suppliers held under more than one record<br/>{{supplier_dupes_likely}} more likely, awaiting review"}}
   B2{{"Material code picked freely<br/>{{material_variants}} materials written several ways<br/>Grade missing on {{grade_unconfirmed_lines}} order and receipt lines"}}
   B4{{"Services ordered with no purchase order<br/>{{no_po_lines}} invoices worth {{no_po_value}}"}}
-  B5{{"Heat number and certificate keyed from paper<br/>Missing on {{receipts_missing_cert}} receipts; traceability coverage {{coverage}}<br/>Short deliveries booked unchallenged: {{qty_var_lines}} lines, {{qty_var_value}}"}}
-  B6{{"Issues not recorded<br/>Receipt-to-job link can only be inferred<br/>{{trace_exposed_jobs}} despatched jobs exposed; {{trace_exposed_sales}} of sales"}}
+  B5{{"Heat number and certificate keyed from paper<br/>Missing on {{receipts_missing_cert}} receipts; {{s355_receipts_no_31}} S355 with no 3.1 certificate<br/>Short deliveries booked unchallenged: {{qty_var_lines}} lines, {{qty_var_value}}"}}
+  B6{{"Issues not recorded<br/>Receipt-to-job link can only be inferred<br/>EXC3 coverage {{coverage_exc3}}; {{trace_exposed_jobs}} jobs with an EN 1090 exposure"}}
   B8{{"Invoice re-keyed against the order<br/>{{price_var_lines}} price variances, {{price_var_value}}"}}
   B9{{"Three-way match done by eye<br/>{{missing_grn_lines}} orders not received: {{missing_grn_value}} committed<br/>{{missing_invoice_lines}} receipts not invoiced: {{missing_invoice_value}} unaccrued<br/>{{over_90_days}} exceptions older than 90 days"}}
 

@@ -74,11 +74,21 @@ FIGURES: dict[str, tuple[str, callable]] = {
     "orphan_wos": ("SELECT count(DISTINCT wo_no) FROM core.time_bookings WHERE NOT wo_matched", count),
     "sales_unmapped_count": ("SELECT count(*) FROM core.sales_invoices WHERE NOT job_matched", count),
     "sales_unmapped_value": ("SELECT sum(net_amount) FROM core.sales_invoices WHERE NOT job_matched", money),
-    # traceability
+    # traceability, by the execution class of each job
+    "exc3_jobs": ("SELECT count(*) FROM core.jobs WHERE execution_class = 'EXC3'", count),
+    "exc2_jobs": ("SELECT count(*) FROM core.jobs WHERE execution_class = 'EXC2'", count),
     "coverage": (headline("traceability", "coverage"), pct),
+    "coverage_exc3": (headline("traceability", "coverage_exc3"), pct),
+    "coverage_exc2": (headline("traceability", "coverage_exc2"), pct),
     "trace_exposed_tonnes": (headline("traceability", "exposed_kg"), tonnes),
+    "trace_exposed_exc3_tonnes": (headline("traceability", "exposed_kg_exc3"), tonnes),
+    "trace_exposed_s355_tonnes": (headline("traceability", "exposed_kg_s355"), tonnes),
     "trace_exposed_jobs": (headline("traceability", "exposed_jobs"), count),
+    "trace_exposed_customers": (headline("traceability", "exposed_customers"), count),
     "trace_exposed_sales": (headline("traceability", "exposed_sales"), money),
+    "trace_gap_tonnes": (headline("traceability", "gap_kg"), tonnes),
+    "trace_gap_jobs": (headline("traceability", "gap_jobs"), count),
+    "s355_receipts_no_31": (headline("traceability", "s355_receipts_no_31"), count),
     "receipts_missing_cert": ("SELECT count(*) FROM staging.corvus_mrp_goods_received "
                               "WHERE heat_number IS NULL OR mill_cert_ref IS NULL", count),
     # stock and materials

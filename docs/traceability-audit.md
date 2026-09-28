@@ -10,20 +10,20 @@ As an independent check, the pack, page and README are built a second time from 
 
 | Where | Warehouse | Config | Document | Scenario | Structure | Untraced | All |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Pack pages | 169 | 125 | 95 | 2 | 114 | 0 | 505 |
-| Pack charts and diagrams | 206 | 2 | 12 | 1 | 167 | 0 | 388 |
-| App Overview page | 25 | 0 | 0 | 1 | 2 | 0 | 28 |
-| README.md | 18 | 11 | 4 | 0 | 12 | 0 | 45 |
-| **All** | **418** | **138** | **111** | **4** | **295** | **0** | **966** |
+| Pack pages | 174 | 125 | 95 | 2 | 124 | 0 | 520 |
+| Pack charts and diagrams | 206 | 2 | 13 | 1 | 171 | 0 | 393 |
+| App Overview page | 26 | 0 | 0 | 1 | 3 | 0 | 30 |
+| README.md | 20 | 11 | 4 | 0 | 16 | 0 | 51 |
+| **All** | **426** | **138** | **112** | **4** | **314** | **0** | **994** |
 
 Each number is counted every time it appears. **Warehouse** is the result of a named query, listed at the end with its SQL. **Config** is a setting: in `config/`, or the Python version in `pyproject.toml` and the app's port in `.streamlit/config.toml`. **Document** is a committed planning or design document whose own tests check its figures against the warehouse. **Scenario** is a fact of the invented company that no data records. **Structure** is a page number, identifier, section counter or axis scale, which is not a figure.
 
 ## The control build
 
-The pack, page and README were built again from a control warehouse generated from a different seed. Each number was paired with the number in the same position of the control build, on every page and chart laid out alike in both. Places whose control has a different number of rows are not paired (Pack figure 05-value-at-risk, Pack figure 08-traceability-breaks).
+The pack, page and README were built again from a control warehouse generated from a different seed. Each number was paired with the number in the same position of the control build, on every page and chart laid out alike in both. Places whose control has a different number of rows are not paired (Pack figure 05-value-at-risk, Pack figure 08-traceability-breaks, Pack figure 09-traceability-by-customer).
 
-* **Same source.** Of 931 numbers paired, 931 cite the same kind of source, the same query or file and the same column in both builds. A number paired with an entry by coincidence of digits would cite a different one when the values change.
-* **Varies with the data.** Of the 398 paired warehouse numbers, 253 changed with the data and 145 did not. Those are listed below.
+* **Same source.** Of 923 numbers paired, 923 cite the same kind of source, the same query or file and the same column in both builds. A number paired with an entry by coincidence of digits would cite a different one when the values change.
+* **Varies with the data.** Of the 381 paired warehouse numbers, 239 changed with the data and 142 did not. Those are listed below.
 
 ## Untraced numbers
 
@@ -48,24 +48,24 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 6 | app query: count(DISTINCT wo_no) | App Overview page |
 | 5 | app query: count_star() | App Overview page |
 | 9 | app query: count_star() | App Overview page |
-| 4 | app query: critical_breaches | App Overview page |
+| 5 | app query: critical_breaches | App Overview page |
 | 3 | app query: max(n) | App Overview page |
-| 40 | app query: rules_run | App Overview page |
+| 41 | app query: rules_run | App Overview page |
 | 92.2 | dq_by_owner: Finance Manager, dq_index | Pack figure 11-data-quality-by-owner |
 | 7 | dq_by_owner: Finance Manager, rules | Pack figure 11-data-quality-by-owner |
 | 0 | dq_by_owner: Finance Manager, rules_met | Pack figure 11-data-quality-by-owner |
 | 19 | dq_by_owner: Production Controller, rules | Pack figure 11-data-quality-by-owner |
 | 9 | dq_by_owner: Purchasing Manager, rules | Pack figure 11-data-quality-by-owner |
 | 2 | dq_by_owner: Purchasing Manager, rules_met | Pack figure 11-data-quality-by-owner |
-| 5 | dq_by_owner: Quality Manager, rules | Pack figure 11-data-quality-by-owner |
+| 6 | dq_by_owner: Quality Manager, rules | Pack figure 11-data-quality-by-owner |
 | 1 | dq_by_owner: Quality Manager, rules_met | Pack figure 11-data-quality-by-owner |
-| 19 | dq_by_system: corvus_mrp, rules | Pack figure 02-data-quality-by-system |
+| 20 | dq_by_system: corvus_mrp, rules | Pack figure 02-data-quality-by-system |
 | 92.2 | dq_by_system: finance, dq_index | Pack figure 02-data-quality-by-system |
 | 7 | dq_by_system: finance, rules | Pack figure 02-data-quality-by-system |
 | 0 | dq_by_system: finance, rules_met | Pack figure 02-data-quality-by-system |
 | 14 | dq_by_system: shop_floor, rules | Pack figure 02-data-quality-by-system |
-| 4 | dq_run: critical_breaches | Pack page 2, Pack page 16 |
-| 40 | dq_run: rules_run | Pack page 2, Pack page 11, README.md |
+| 5 | dq_run: critical_breaches | Pack page 2, Pack page 16 |
+| 41 | dq_run: rules_run | Pack page 2, Pack page 11, README.md |
 | 31 August 2026 | extract date | Pack page 1, Pack page 16, README.md |
 | 24871 | figure: example_job_code | Pack figure 01-three-systems, Pack figure 03-order-to-cash, README.md |
 | 20 | figure: job_finance_only_codes | Pack page 3, Pack figure 03-order-to-cash |
@@ -93,19 +93,18 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 11 | reconciliation headline: Lines where count disagrees with book | Pack page 8 |
 | 15 | rows in job_top | Pack figure 06-job-cost-gap |
 | 20 | rows in stock | Pack page 8 |
-| 12 | rows in trace_customers | Pack figure 09-traceability-by-customer |
 | 0 | rules: accuracy all severities, met | Pack page 11 |
 | 2 | rules: accuracy all severities, rules | Pack page 11 |
 | 1 | rules: accuracy critical, rules | Pack page 11 |
 | 1 | rules: accuracy medium, rules | Pack page 11 |
-| 5 | rules: all critical, rules | Pack page 11 |
+| 6 | rules: all critical, rules | Pack page 11 |
 | 17 | rules: all high, rules | Pack page 11 |
 | 2 | rules: all low, rules | Pack page 11 |
 | 16 | rules: all medium, rules | Pack page 11 |
-| 40 | rules: all, rules | Pack page 11 |
+| 41 | rules: all, rules | Pack page 11 |
 | 1 | rules: completeness all severities, met | Pack page 11 |
-| 12 | rules: completeness all severities, rules | Pack page 11 |
-| 3 | rules: completeness critical, rules | Pack page 11 |
+| 13 | rules: completeness all severities, rules | Pack page 11 |
+| 4 | rules: completeness critical, rules | Pack page 11 |
 | 4 | rules: completeness high, rules | Pack page 11 |
 | 1 | rules: completeness low, rules | Pack page 11 |
 | 4 | rules: completeness medium, rules | Pack page 11 |
@@ -138,8 +137,6 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 100% | stock: WKF RHS, accuracy | Pack figure 07-stock-accuracy |
 | 100% | stock: WKF SHS, accuracy | Pack figure 07-stock-accuracy |
 | 100% | stock: WKF UC, accuracy | Pack figure 07-stock-accuracy |
-| 3 | trace_customers: Bramhall Group plc, exposed_jobs | Pack figure 09-traceability-by-customer |
-| 4 | trace_customers: Caledonian Rail Engineering Ltd, exposed_jobs | Pack figure 09-traceability-by-customer |
 
 ## Numbers not traced to a warehouse query
 
@@ -279,7 +276,7 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 53 | benefits case | Pack page 15 |
 | 53.8% | benefits case | Pack page 15 |
 | 54.9% | benefits case | Pack page 15 |
-| 68.7% | benefits case | Pack page 15 |
+| 66.4% | benefits case | Pack page 15 |
 | 7.4% | benefits case | Pack page 15 |
 | 75% | benefits case | Pack page 15 |
 | 76.2% | benefits case | Pack page 15 |
@@ -289,9 +286,9 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 89.6% | benefits case | Pack page 15 |
 | 90 | benefits case | Pack page 15 |
 | 90% | benefits case | Pack page 15 |
-| 92.2 | benefits case | Pack page 15 |
+| 92.1 | benefits case | Pack page 15 |
 | 95% | benefits case | Pack page 15 |
-| 98.0 | benefits case | Pack page 15 |
+| 98.1 | benefits case | Pack page 15 |
 | 99% | benefits case | Pack page 15 |
 | £1,068 | benefits case | Pack page 15 |
 | £1.43m | benefits case | Pack page 15 |
@@ -337,6 +334,7 @@ Traced to a query, but the same when the pack was built from the control warehou
 | 9 | risk scoring bands (docs/risk-register.md) | Pack figure 13-risk-heat-map |
 | 15% | wording of docs/diagrams/templates/as-is-order-to-cash.mmd | Pack figure 03-order-to-cash |
 | 90 | wording of docs/diagrams/templates/as-is-order-to-cash.mmd | Pack figure 03-order-to-cash |
+| 1090 | wording of docs/diagrams/templates/as-is-procure-to-pay.mmd | Pack figure 04-procure-to-pay |
 | 90 | wording of docs/diagrams/templates/as-is-procure-to-pay.mmd | Pack figure 04-procure-to-pay |
 
 ### Scenario
@@ -358,41 +356,39 @@ Traced to a query, but the same when the pack was built from the control warehou
 | -£80k | axis scale | Pack figure 06-job-cost-gap |
 | 0 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 08-traceability-breaks, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
 | 1 | axis scale | Pack figure 12-rollout-timeline, Pack figure 13-risk-heat-map |
-| 10 | axis scale | Pack figure 12-rollout-timeline |
-| 100 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 08-traceability-breaks, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
+| 10 | axis scale | Pack figure 09-traceability-by-customer, Pack figure 12-rollout-timeline |
+| 100 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 08-traceability-breaks, Pack figure 11-data-quality-by-owner |
 | 11 | axis scale | Pack figure 12-rollout-timeline |
 | 12 | axis scale | Pack figure 12-rollout-timeline |
-| 125 | axis scale | Pack figure 09-traceability-by-customer |
 | 13 | axis scale | Pack figure 12-rollout-timeline |
 | 14 | axis scale | Pack figure 12-rollout-timeline |
 | 15 | axis scale | Pack figure 12-rollout-timeline |
-| 150 | axis scale | Pack figure 09-traceability-by-customer |
 | 16 | axis scale | Pack figure 12-rollout-timeline |
 | 17 | axis scale | Pack figure 12-rollout-timeline |
-| 175 | axis scale | Pack figure 09-traceability-by-customer |
 | 18 | axis scale | Pack figure 12-rollout-timeline |
 | 2 | axis scale | Pack figure 12-rollout-timeline, Pack figure 13-risk-heat-map |
-| 20 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 11-data-quality-by-owner |
-| 200 | axis scale | Pack figure 08-traceability-breaks, Pack figure 09-traceability-by-customer |
-| 25 | axis scale | Pack figure 09-traceability-by-customer |
+| 20 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
+| 200 | axis scale | Pack figure 08-traceability-breaks |
 | 3 | axis scale | Pack figure 12-rollout-timeline, Pack figure 13-risk-heat-map |
+| 30 | axis scale | Pack figure 09-traceability-by-customer |
 | 300 | axis scale | Pack figure 08-traceability-breaks |
 | 4 | axis scale | Pack figure 12-rollout-timeline, Pack figure 13-risk-heat-map |
-| 40 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 11-data-quality-by-owner |
+| 40 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
 | 400 | axis scale | Pack figure 08-traceability-breaks |
 | 5 | axis scale | Pack figure 12-rollout-timeline, Pack figure 13-risk-heat-map |
 | 50 | axis scale | Pack figure 09-traceability-by-customer |
 | 500 | axis scale | Pack figure 08-traceability-breaks |
 | 6 | axis scale | Pack figure 12-rollout-timeline |
-| 60 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 11-data-quality-by-owner |
+| 60 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
 | 600 | axis scale | Pack figure 08-traceability-breaks |
 | 7 | axis scale | Pack figure 12-rollout-timeline |
+| 70 | axis scale | Pack figure 09-traceability-by-customer |
 | 700 | axis scale | Pack figure 08-traceability-breaks |
-| 75 | axis scale | Pack figure 09-traceability-by-customer |
 | 8 | axis scale | Pack figure 12-rollout-timeline |
-| 80 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 11-data-quality-by-owner |
+| 80 | axis scale | Pack figure 02-data-quality-by-system, Pack figure 07-stock-accuracy, Pack figure 09-traceability-by-customer, Pack figure 11-data-quality-by-owner |
 | 800 | axis scale | Pack figure 08-traceability-breaks |
 | 9 | axis scale | Pack figure 12-rollout-timeline |
+| 90 | axis scale | Pack figure 09-traceability-by-customer |
 | £0 | axis scale | Pack figure 05-value-at-risk, Pack figure 06-job-cost-gap |
 | £1.0m | axis scale | Pack figure 05-value-at-risk |
 | £100k | axis scale | Pack figure 06-job-cost-gap |
@@ -404,7 +400,8 @@ Traced to a query, but the same when the pack was built from the control warehou
 | £5.0m | axis scale | Pack figure 05-value-at-risk |
 | £60k | axis scale | Pack figure 06-job-cost-gap |
 | £80k | axis scale | Pack figure 06-job-cost-gap |
-| 3.1 certificate | certificate type under EN 10204 | Pack page 14 |
+| 3.1 certificate | certificate type under EN 10204 | Pack page 2, Pack page 9, Pack page 14, Pack figure 04-procure-to-pay, App Overview page, README.md |
+| 3.1 inspection document | certificate type under EN 10204 | Pack page 9, Pack page 12 |
 | Benefits, illustrative 15 | contents page number | Pack page 1 |
 | Executive summary 2 | contents page number | Pack page 1 |
 | How performance will be measured 12 | contents page number | Pack page 1 |
@@ -417,7 +414,8 @@ Traced to a query, but the same when the pack was built from the control warehou
 | The target 10 | contents page number | Pack page 1 |
 | What we found 6 | contents page number | Pack page 1 |
 | Who owns the data, and the rules 11 | contents page number | Pack page 1 |
-| EN 1090 | name of a standard | Pack page 2, Pack page 9, Pack page 12, Pack page 13, Pack page 14, Pack page 16, App Overview page, README.md |
+| EN 1090 | name of a standard | Pack page 2, Pack page 9, Pack page 13, Pack page 14, Pack page 16, Pack figure 03-order-to-cash, Pack figure 09-traceability-by-customer, App Overview page, README.md |
+| EN 1090-2 | name of a standard | Pack page 9, Pack page 12 |
 | 1.  | numbered step, phase or list item | Pack page 13, Pack page 16, Pack figure 03-order-to-cash, Pack figure 04-procure-to-pay, README.md |
 | 10.  | numbered step, phase or list item | Pack figure 03-order-to-cash, Pack figure 04-procure-to-pay |
 | 11.  | numbered step, phase or list item | Pack figure 03-order-to-cash, Pack figure 04-procure-to-pay |
@@ -543,15 +541,16 @@ Every query a warehouse number traces to, with the numbers it produced.
 | app query: count(DISTINCT split_part(source_file, '/', 1)) | Three, three | `SELECT count(DISTINCT split_part(source_file, '/', 1)) FROM governance.table_balance` |
 | app query: count(DISTINCT wo_no) | 6 | `SELECT count(DISTINCT wo_no) FROM core.time_bookings WHERE NOT wo_matched` |
 | app query: count_star() | 5, 9, 93, 189 | `SELECT count(*) FROM marts.kpi_scorecard` |
-| app query: critical_breaches | 4 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
-| app query: dq_index | 92.2 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| app query: critical_breaches | 5 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| app query: dq_index | 92.1 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
 | app query: max(n) | 3 | `SELECT max(n) FROM (SELECT count(DISTINCT source_name) AS n FROM core.supplier_xref GROUP BY supplier_id)` |
 | app query: row 1, value | £4,314,978 | `SELECT * FROM recon.headline` |
 | app query: row 15, value | £1,735,365 | `SELECT * FROM recon.headline` |
-| app query: row 37, value | 148 | `SELECT * FROM recon.headline` |
-| app query: row 39, value | 1,103 | `SELECT * FROM recon.headline` |
+| app query: row 39, value | 145 | `SELECT * FROM recon.headline` |
+| app query: row 41, value | 786 | `SELECT * FROM recon.headline` |
+| app query: row 46, value | 316 | `SELECT * FROM recon.headline` |
 | app query: rules_met | 7 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
-| app query: rules_run | 40 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| app query: rules_run | 41 | `SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
 | app query: sum(raw_rows) | 26,836 | `SELECT sum(raw_rows) FROM governance.table_balance` |
 | dq_by_owner: Finance Manager, dq_index | 92.2 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
 | dq_by_owner: Finance Manager, rules | 7 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
@@ -563,10 +562,10 @@ Every query a warehouse number traces to, with the numbers it produced.
 | dq_by_owner: Purchasing Manager, rules | 9 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
 | dq_by_owner: Purchasing Manager, rules_met | 2 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
 | dq_by_owner: Quality Manager, dq_index | 89.8 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
-| dq_by_owner: Quality Manager, rules | 5 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
+| dq_by_owner: Quality Manager, rules | 6 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
 | dq_by_owner: Quality Manager, rules_met | 1 | `SELECT owner, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_owner ORDER BY dq_index` |
-| dq_by_system: corvus_mrp, dq_index | 91.1 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
-| dq_by_system: corvus_mrp, rules | 19 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
+| dq_by_system: corvus_mrp, dq_index | 91.0 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
+| dq_by_system: corvus_mrp, rules | 20 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
 | dq_by_system: corvus_mrp, rules_met | 6 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
 | dq_by_system: finance, dq_index | 92.2 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
 | dq_by_system: finance, rules | 7 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
@@ -574,13 +573,15 @@ Every query a warehouse number traces to, with the numbers it produced.
 | dq_by_system: shop_floor, dq_index | 94.6 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
 | dq_by_system: shop_floor, rules | 14 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
 | dq_by_system: shop_floor, rules_met | 1 | `SELECT system, dq_index, rules, rules_met, critical_breaches FROM governance.v_dq_scorecard_by_system ORDER BY dq_index` |
-| dq_run: critical_breaches | 4 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
-| dq_run: dq_index | 92.2 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| dq_run: critical_breaches | 5 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| dq_run: dq_index | 92.1 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
 | dq_run: rules_met | 7 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
-| dq_run: rules_run | 40 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
+| dq_run: rules_run | 41 | `SELECT dq_index, rules_met, rules_run, critical_breaches, records_failed FROM governance.dq_run ORDER BY finished_at DESC LIMIT 1` |
 | extract date | 31 August 2026 | `SELECT as_of_date FROM marts.parameters` |
-| figure: coverage | 68.7% | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'coverage'` |
+| figure: coverage_exc3 | 66.4% | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'coverage_exc3'` |
 | figure: example_job_code | 24871 | `SELECT finance_job_code FROM core.job_crosswalk WHERE job_no = 'J-24-0871'` |
+| figure: exc2_jobs | 97 | `SELECT count(*) FROM core.jobs WHERE execution_class = 'EXC2'` |
+| figure: exc3_jobs | 53 | `SELECT count(*) FROM core.jobs WHERE execution_class = 'EXC3'` |
 | figure: grade_unconfirmed_lines | 246 | `SELECT sum(row_count) FROM core.material_xref WHERE status = 'review' AND source_table IN ('purchase_orders', 'goods_received')` |
 | figure: job_finance_only_codes | 20 | `SELECT count(*) FROM core.finance_jobs WHERE NOT mrp_matched` |
 | figure: job_finance_only_cost | £236k | `SELECT value FROM recon.headline WHERE engine = 'job_cost' AND key = 'finance_only_cost'` |
@@ -606,6 +607,7 @@ Every query a warehouse number traces to, with the numbers it produced.
 | figure: qty_var_lines | 373 | `SELECT value FROM recon.headline WHERE engine = 'three_way' AND key = 'quantity_variance_lines'` |
 | figure: qty_var_value | £115k | `SELECT value FROM recon.headline WHERE engine = 'three_way' AND key = 'quantity_variance_value'` |
 | figure: receipts_missing_cert | 178 | `SELECT count(*) FROM staging.corvus_mrp_goods_received WHERE heat_number IS NULL OR mill_cert_ref IS NULL` |
+| figure: s355_receipts_no_31 | 69 | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 's355_receipts_no_31'` |
 | figure: sales_unmapped_count | 32 | `SELECT count(*) FROM core.sales_invoices WHERE NOT job_matched` |
 | figure: sales_unmapped_value | £2.02m | `SELECT sum(net_amount) FROM core.sales_invoices WHERE NOT job_matched` |
 | figure: shopfloor_quarantined | 189 | `SELECT count(*) FROM governance.quarantine WHERE source_file LIKE 'shop_floor/%'` |
@@ -613,9 +615,8 @@ Every query a warehouse number traces to, with the numbers it produced.
 | figure: stock_value_error | £15k | `SELECT value FROM recon.headline WHERE engine = 'stock' AND key = 'value_error'` |
 | figure: supplier_dupes_confirmed | 5 | `SELECT count(*) FROM core.supplier_golden WHERE corvus_codes LIKE '%,%' OR finance_accounts LIKE '%,%'` |
 | figure: supplier_dupes_likely | 3 | `SELECT (SELECT count(*) FROM core.supplier_review_queue WHERE evidence_pos > 0) + (SELECT count(*) FROM core.supplier_candidate_pairs WHERE status = 'unmatched' AND cross_system AND evidence_pos > 0)` |
-| figure: trace_exposed_jobs | 148 | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'exposed_jobs'` |
-| figure: trace_exposed_sales | £14.47m | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'exposed_sales'` |
-| figure: trace_exposed_tonnes | 1,103 | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'exposed_kg'` |
+| figure: trace_exposed_jobs | 145 | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'exposed_jobs'` |
+| figure: trace_exposed_tonnes | 786 | `SELECT value FROM recon.headline WHERE engine = 'traceability' AND key = 'exposed_kg'` |
 | figure: unallocated_hours | 242 | `SELECT value FROM recon.headline WHERE engine = 'job_cost' AND key = 'unallocated_hours'` |
 | figure: uom_conflicts | 14 | `SELECT count(*) FROM core.material_golden WHERE uom_conflict` |
 | figure: wip_over_90 | 54.9% | `SELECT secondary_value FROM marts.kpi_scorecard WHERE kpi_id = 'KPI-07'` |
@@ -641,7 +642,8 @@ Every query a warehouse number traces to, with the numbers it produced.
 | kpis: KPI-04 Stock accuracy, value | 89.6% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
 | kpis: KPI-05 Three-way match exception rate, secondary_value | £4.31m | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
 | kpis: KPI-05 Three-way match exception rate, value | 53.8% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
-| kpis: KPI-06 Material traceability coverage, value | 68.7% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
+| kpis: KPI-06 Material traceability coverage on EXC3 work, secondary_value | 69.9% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
+| kpis: KPI-06 Material traceability coverage on EXC3 work, value | 66.4% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
 | kpis: KPI-07 WIP value and ageing, secondary_value | 54.9% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
 | kpis: KPI-07 WIP value and ageing, value | £714k | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
 | kpis: KPI-08 Capacity utilisation, value | 86.1% | `SELECT kpi_id, name, value, unit, target, status, owner, secondary_label, secondary_value, secondary_unit FROM marts.kpi_scorecard ORDER BY kpi_id` |
@@ -665,21 +667,24 @@ Every query a warehouse number traces to, with the numbers it produced.
 | query: sites | two | `SELECT count(DISTINCT site_code) FROM core.works_orders` |
 | query: turnover_12m | £11.44m | `SELECT sum(turnover) FROM marts.quality_cost_by_month WHERE month > (SELECT as_of_date FROM marts.parameters) - INTERVAL 12 MONTH` |
 | reconciliation headline label | 90 | `SELECT label FROM recon.headline WHERE engine = 'three_way' AND key = 'over_90_days'` |
-| reconciliation headline: Customers with exposed jobs | 38 | `SELECT count(DISTINCT coalesce(customer_name, '(no finance customer)')) FROM recon.trace_jobs WHERE en1090_exposure` |
-| reconciliation headline: Despatched steel without full traceability | 1,103 | `SELECT round(sum(kg) / 1000, 3) FROM recon.trace_lines WHERE exposed` |
+| reconciliation headline: Customers with an EN 1090 compliance exposure | 38 | `SELECT count(DISTINCT coalesce(customer_name, '(no finance customer)')) FROM recon.trace_jobs WHERE en1090_exposure` |
+| reconciliation headline: Despatched steel with an EN 1090 compliance exposure | 786 | `SELECT round(sum(kg) / 1000, 3) FROM recon.trace_lines WHERE compliance_exposure` |
+| reconciliation headline: EXC2 S355 steel despatched with no 3.1 document shown | 402 | `SELECT round(sum(kg) / 1000, 3) FROM recon.trace_lines WHERE exposure = 'EN 1090: S355 with no 3.1 document shown'` |
+| reconciliation headline: EXC2 steel despatched with an incomplete chain | 316 | `SELECT round(sum(kg) / 1000, 3) FROM recon.trace_lines WHERE practice_gap` |
+| reconciliation headline: EXC3 steel despatched with an incomplete chain | 384 | `SELECT round(sum(kg) / 1000, 3) FROM recon.trace_lines WHERE exposure = 'EN 1090: EXC3 chain incomplete'` |
 | reconciliation headline: Exceptions older than 90 days | 1,074 | `SELECT count(*) FROM recon.three_way_lines WHERE is_exception AND age_days > 90` |
 | reconciliation headline: Finance cost on jobs Corvus does not hold | £235,635 | `SELECT round(sum(amount), 2) FROM recon.job_cost_detail WHERE NOT job_in_corvus` |
 | reconciliation headline: Hours booked to works orders not in Corvus | 242 | `SELECT round(sum(hours), 2) FROM core.time_bookings WHERE NOT wo_matched` |
-| reconciliation headline: Jobs despatched with an incomplete chain | 148 | `SELECT count(*) FROM recon.trace_jobs WHERE en1090_exposure` |
+| reconciliation headline: Jobs with an EN 1090 compliance exposure | 145 | `SELECT count(*) FROM recon.trace_jobs WHERE en1090_exposure` |
 | reconciliation headline: Labour gap, finance vs shop floor (gross) | £248k, £248,112 | `SELECT round(sum(abs(labour_gap)), 2) FROM recon.job_cost WHERE true` |
 | reconciliation headline: Lines where count disagrees with book | 11 | `SELECT count(*) FROM recon.stock_lines WHERE NOT accurate` |
 | reconciliation headline: Lines: invoice with no PO | 726 | `SELECT count(*) FROM recon.three_way_lines WHERE category = 'invoice with no PO'` |
 | reconciliation headline: Lines: price variance | 53 | `SELECT count(*) FROM recon.three_way_lines WHERE category = 'price variance'` |
 | reconciliation headline: Material cost charged to the wrong job | £1.43m, £1,427,473 | `SELECT round(sum(abs(material_gap)) - abs(sum(material_gap)), 2) FROM recon.job_cost WHERE in_corvus` |
 | reconciliation headline: Material gap on Corvus jobs (gross) | £1,542,327 | `SELECT round(sum(abs(material_gap)), 2) FROM recon.job_cost WHERE in_corvus` |
-| reconciliation headline: Material traceability coverage | 68.7% | `SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 2) FROM recon.trace_lines WHERE true` |
+| reconciliation headline: Material traceability coverage on EXC3 work | 66.4% | `SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 2) FROM recon.trace_lines WHERE traceability_required` |
 | reconciliation headline: Purchase-to-pay value at risk | £4.31m, £4,314,978 | `SELECT round(sum(value_at_risk), 2) FROM recon.three_way_lines WHERE is_exception` |
-| reconciliation headline: Sales value of exposed jobs | £14.47m | `SELECT round(sum(coalesce(sales_value, 0)), 2) FROM recon.trace_jobs WHERE en1090_exposure` |
+| reconciliation headline: Sales value of jobs with a compliance exposure | £14.35m | `SELECT round(sum(coalesce(sales_value, 0)), 2) FROM recon.trace_jobs WHERE en1090_exposure` |
 | reconciliation headline: Site and section groups below target | 8 | `SELECT count(*) FROM recon.stock_summary WHERE NOT meets_target` |
 | reconciliation headline: Steel miscounted | 14,050 | `SELECT round(sum(abs_error_kg), 1) FROM recon.stock_lines WHERE NOT accurate AND abs_error_kg IS NOT NULL` |
 | reconciliation headline: Stock line accuracy | 89.6% | `SELECT round(100 * avg(CAST(accurate AS DOUBLE)), 2) FROM recon.stock_lines WHERE true` |
@@ -697,15 +702,15 @@ Every query a warehouse number traces to, with the numbers it produced.
 | rules: accuracy all severities, rules | 2 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: accuracy critical, rules | 1 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: accuracy medium, rules | 1 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
-| rules: all critical, rules | 5 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
+| rules: all critical, rules | 6 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: all high, rules | 17 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: all low, rules | 2 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: all medium, rules | 16 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: all, met | 7 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
-| rules: all, rules | 40 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
+| rules: all, rules | 41 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: completeness all severities, met | 1 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
-| rules: completeness all severities, rules | 12 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
-| rules: completeness critical, rules | 3 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
+| rules: completeness all severities, rules | 13 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
+| rules: completeness critical, rules | 4 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: completeness high, rules | 4 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: completeness low, rules | 1 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
 | rules: completeness medium, rules | 4 | `SELECT dimension, severity, count(*) AS rules, count(*) FILTER (WHERE threshold_met) AS met FROM governance.v_dq_latest GROUP BY ALL ORDER BY ALL` |
@@ -807,27 +812,27 @@ Every query a warehouse number traces to, with the numbers it produced.
 | trace_breaks: receipt: heat number missing, tonnes | 531 | `SELECT break_at, lines, kg / 1000 AS tonnes FROM recon.trace_breaks WHERE break_at <> 'complete' ORDER BY kg DESC` |
 | trace_breaks: receipt: mill certificate missing, lines | 458 | `SELECT break_at, lines, kg / 1000 AS tonnes FROM recon.trace_breaks WHERE break_at <> 'complete' ORDER BY kg DESC` |
 | trace_breaks: receipt: mill certificate missing, tonnes | 282 | `SELECT break_at, lines, kg / 1000 AS tonnes FROM recon.trace_breaks WHERE break_at <> 'complete' ORDER BY kg DESC` |
+| trace_customers: Ashcroft Build Ltd, exposed_jobs | 2 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Ashcroft Build Ltd, tonnes | 29 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Beacon Mast Services Ltd, exposed_jobs | 9 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Beacon Mast Services Ltd, tonnes | 39 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Brackley Logistics Parks, exposed_jobs | 5 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Brackley Logistics Parks, tonnes | 39 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Bramhall Group plc, exposed_jobs | 3 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Bramhall Group plc, tonnes | 43 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Brackley Logistics Parks, tonnes | 28 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Caledonian Rail Engineering Ltd, exposed_jobs | 4 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Caledonian Rail Engineering Ltd, tonnes | 59 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Caledonian Rail Engineering Ltd, tonnes | 54 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Denton Steel Erectors, exposed_jobs | 6 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Denton Steel Erectors, tonnes | 42 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Denton Steel Erectors, tonnes | 32 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Harborough Industrial Ltd, exposed_jobs | 4 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Harborough Industrial Ltd, tonnes | 60 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Lindsey Energy Services, exposed_jobs | 6 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Lindsey Energy Services, tonnes | 38 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Lowther Construction Ltd, exposed_jobs | 11 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Lowther Construction Ltd, tonnes | 139 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Oakridge Developments, exposed_jobs | 4 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Oakridge Developments, tonnes | 48 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Harborough Industrial Ltd, tonnes | 47 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Lowther Construction Ltd, exposed_jobs | 10 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Lowther Construction Ltd, tonnes | 60 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Meridian Construction plc, exposed_jobs | 3 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Meridian Construction plc, tonnes | 28 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Ridley Structures, exposed_jobs | 4 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Ridley Structures, tonnes | 27 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Severn Rail Projects Ltd, exposed_jobs | 3 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Severn Rail Projects Ltd, tonnes | 33 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Stanmore Build Ltd, exposed_jobs | 5 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Stanmore Build Ltd, tonnes | 44 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Thornbury Estates Ltd, exposed_jobs | 5 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
-| trace_customers: Thornbury Estates Ltd, tonnes | 67 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
+| trace_customers: Stanmore Build Ltd, tonnes | 34 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Westgate Rail Ltd, exposed_jobs | 2 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |
 | trace_customers: Westgate Rail Ltd, tonnes | 35 | `SELECT customer_name, exposed_kg / 1000 AS tonnes, exposed_jobs FROM recon.trace_customers ORDER BY exposed_kg DESC, customer_name LIMIT 12` |

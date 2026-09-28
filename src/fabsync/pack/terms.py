@@ -32,6 +32,9 @@ TERMS = [
     Term("en1090", r"EN 1090", "EN 1090",
          "the standard structural steelwork is made to; a fabricator must be certified against it to CE or UKCA "
          "mark, and so sell, its steelwork"),
+    Term("exc", r"(?i)\bexecution class(?:es)?\b|\bEXC[1-4]\b", "execution class",
+         "the class, EXC1 to EXC4, that a structure's designer specifies under EN 1090; it sets how much "
+         "inspection and traceability the standard requires"),
     Term("modelled", r"(?i)\bmodelled\b", "modelled",
          "calculated from measured figures and stated assumptions; an estimate or an aim, never a result"),
     Term("corvus", r"Corvus", "Corvus MRP",

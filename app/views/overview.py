@@ -88,7 +88,7 @@ def recon(engine, key):
 dq = ui.q("SELECT dq_index, rules_met, rules_run, critical_breaches FROM governance.dq_run "
           "ORDER BY finished_at DESC LIMIT 1").iloc[0]
 tw, jc = recon("three_way", "value_at_risk"), recon("job_cost", "gross_gap")
-tx, tj = recon("traceability", "exposed_kg"), recon("traceability", "exposed_jobs")
+tx, tj, tg = recon("traceability", "exposed_kg"), recon("traceability", "exposed_jobs"), recon("traceability", "gap_kg")
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
@@ -102,8 +102,10 @@ with c2:
                 note=f"{dq.rules_met:.0f} of {dq.rules_run:.0f} rules met; "
                      f"{dq.critical_breaches:.0f} critical rules breached")
 with c3:
-    ui.headline("Steel despatched without full traceability", f"{tx.value:,.0f} tonnes", tx.rows_sql, "ov_trace",
-                note=f"{tj.value:.0f} jobs already on site carry an EN 1090 exposure", explanation=tx.explanation)
+    ui.headline("Steel on site with an EN 1090 compliance exposure", f"{tx.value:,.0f} tonnes", tx.rows_sql,
+                "ov_trace", note=f"On {tj.value:.0f} jobs: EXC3 steel without a full chain, or S355 with no 3.1 "
+                                 f"certificate. A further {tg.value:,.0f} t on EXC2 work is a good-practice gap",
+                explanation=tx.explanation)
 with c4:
     ui.headline("Job cost that does not reconcile", ui.gbp(jc.value), jc.rows_sql, "ov_jobgap",
                 note="Finance against Corvus and the shop floor, summed over jobs", explanation=jc.explanation)

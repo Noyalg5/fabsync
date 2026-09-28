@@ -33,6 +33,23 @@ def raw(tmp_path_factory) -> tuple[Path, dict]:
     return out, manifest
 
 
+def test_every_job_has_an_execution_class_as_a_property_of_the_scenario(raw) -> None:
+    out, manifest = raw
+    exc = manifest["scenario"]["execution_class"]
+    wos = load(out, "corvus_mrp/works_orders.csv")
+    per_job = wos.groupby("job_no").execution_class.agg(set)
+    assert (per_job.map(len) == 1).all(), "one class per structure"
+    assert {j: c.pop() for j, c in per_job.items()} == exc["jobs"]
+    assert set(exc["jobs"].values()) == {"EXC2", "EXC3"}
+    share = {s: n["EXC3"] / (n["EXC2"] + n["EXC3"]) for s, n in exc["by_sector"].items()}
+    assert min(share["rail"], share["telecoms"]) > max(share["structural"], share["architectural"])
+    assert not any("execution" in k or "class" in k for k in manifest["defects"]), "not a defect"
+    md = (out / "DEFECTS.md").read_text(encoding="utf-8")
+    scenario = md[md.index("## Scenario"):md.index("## Defects")]
+    n3, n2 = (sum(v[c] for v in exc["by_sector"].values()) for c in ("EXC3", "EXC2"))
+    assert f"{n3} are EXC3 and {n2} EXC2" in " ".join(scenario.split())
+
+
 def load(out: Path, rel: str) -> pd.DataFrame:
     return pd.read_csv(out / rel, skiprows=1, dtype=str, keep_default_na=False)
 

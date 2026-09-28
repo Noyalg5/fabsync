@@ -104,7 +104,7 @@ def build_core(con: duckdb.DuckDBPyConnection, rec: Recorder, config_path: Path 
         SELECT w.wo_no, w.job_no, {FINANCE_CODE.format(col='w.job_no')} AS finance_job_code,
                w.customer_ref, w.part_code, w.description, w.qty, w.uom, w.planned_hours,
                w.planned_start, w.planned_finish, w.actual_finish, w.status,
-               w.site AS site_code, s.site_name, w.{LINEAGE_COLS.replace(', ', ', w.')}
+               w.site AS site_code, s.site_name, w.execution_class, w.{LINEAGE_COLS.replace(', ', ', w.')}
         FROM staging.corvus_mrp_works_orders w LEFT JOIN core.sites s ON s.site_code = w.site
         ORDER BY w.wo_no""",
       Check("CO-03", "finance_job_code IS NOT NULL", "{affected:,} finance job codes derived from job_no"))
@@ -118,7 +118,9 @@ def build_core(con: duckdb.DuckDBPyConnection, rec: Recorder, config_path: Path 
         SELECT job_no, any_value(finance_job_code) AS finance_job_code, min(customer_ref) AS customer_ref,
                mode(site_code) AS site_code, count(*) AS works_orders, sum(planned_hours) AS planned_hours,
                min(planned_start) AS planned_start, max(planned_finish) AS planned_finish,
-               any_value(finance_job_code) IN {finance_codes} AS in_finance
+               any_value(finance_job_code) IN {finance_codes} AS in_finance,
+               -- One class per structure; a job whose works orders disagree has none, and is treated as EXC3.
+               CASE WHEN count(DISTINCT execution_class) = 1 THEN min(execution_class) END AS execution_class
         FROM core.works_orders GROUP BY job_no ORDER BY job_no""")
     n_jobs, not_in_fin = con.execute(
         "SELECT count(*), count(*) FILTER (WHERE NOT in_finance) FROM core.jobs").fetchone()

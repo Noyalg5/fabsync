@@ -86,6 +86,7 @@ def expected(world) -> dict[str, int]:
         "5_services": number(s[5], r"no PO reference: (\d+) for subcontract"),
         "5_overheads": number(s[5], r"(\d+) overheads on nominal"),
         "6_grns": number(s[6], r"(\d+) of \d+ goods receipts"),
+        "6_s355": number(s[6], r"(\d+) of these receipts are S355"),
         "7_jobs": number(s[7], r"On (\d+) jobs"),
         "8_lines": number(s[8], r"on (\d+) of the \d+ counted"),
         "8_counted": number(s[8], r"of the (\d+) counted stock lines"),
@@ -160,6 +161,7 @@ def test_register_lists_every_defect_and_its_markdown_agrees_with_its_detail(wor
         "5_short": len(twm["short_deliveries"]), "5_services": len(twm["invoices_without_po"]["services"]),
         "5_overheads": len(twm["invoices_without_po"]["overheads"]),
         "6_grns": len(d["6_traceability_gaps"]["grn_missing_heat_or_cert"]),
+        "6_s355": len(d["6_traceability_gaps"]["s355_grn_without_certificate"]),
         "7_jobs": len(d["7_labour_variance"]["jobs"]),
         "8_lines": len(d["8_stock_accuracy"]["lines_with_count_variance"]),
         "8_counted": d["8_stock_accuracy"]["total_counted_lines"],
@@ -316,6 +318,16 @@ def test_6_traceability_gaps(world) -> None:
     no_heat = staged_where(con, "corvus_mrp_goods_received", "grn_no", "heat_number IS NULL")
     no_cert = staged_where(con, "corvus_mrp_goods_received", "grn_no", "mill_cert_ref IS NULL")
     assert (failing(con, "DQ-01"), failing(con, "DQ-02")) == (no_heat, no_cert) and no_heat | no_cert == gaps
+    # S355 needs a 3.1 document at every execution class. DQ-41 can test only receipts whose code states the grade;
+    # the rest of the planted S355 receipts wait in the grade review queue.
+    s355 = set(d["s355_grn_without_certificate"])
+    assert len(s355) == e["6_s355"] and s355 <= no_cert
+    confirmed = {g for (g,) in rows(con, """SELECT g.grn_no FROM staging.corvus_mrp_goods_received g
+        JOIN core.material_xref x ON x.source_table = 'goods_received' AND x.source_code = g.material_code
+        WHERE x.status = 'auto'""")}
+    assert failing(con, "DQ-41") == s355 & confirmed
+    assert failing(con, "DQ-41") == {g for (g,) in rows(con, "SELECT grn_no FROM recon.trace_receipts "
+                                                           "WHERE s355 AND NOT document_31")}
     supplied: dict[tuple, set[str]] = {}
     for w, n, g in rows(con, """SELECT a.wo_no, a.line_no, a.grn_no FROM recon.trace_allocations a
                                  JOIN recon.trace_lines l USING (wo_no, line_no) WHERE l.break_at LIKE 'receipt:%'"""):

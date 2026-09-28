@@ -203,11 +203,15 @@ Records move from paper to forms, people are learning new screens, and during du
 assume the other captured the heat number. A finding at a surveillance visit during the programme is
 worse than one before it, because the programme was meant to fix exactly this.
 
-**What the prototype shows.** Traceability coverage is 68.7% by weight. 1,103 tonnes have been despatched
-on 148 jobs for 38 customers without a complete chain from mill certificate to delivery. Chains break
-where the heat number is missing (651 lines), the certificate is missing (458), the grade is unconfirmed
-on receipt (656), there is no receipt on record (74) or there is no delivery note (21). Three of the four
-breached critical data quality rules are about traceability.
+**What the prototype shows.** What EN 1090-2 requires depends on each structure's execution class: 53 jobs
+are EXC3 and 97 EXC2. Traceability coverage is 66.4% by weight on EXC3 work and 69.9% on EXC2. 786 tonnes
+already despatched carry an EN 1090 compliance exposure, on 145 jobs for 38 customers: 384 tonnes of EXC3
+steel without a complete chain from mill certificate to delivery, and 402 tonnes of S355 on EXC2 jobs with no
+3.1 certificate shown. A further 316 tonnes on EXC2 work have incomplete chains, a good-practice gap rather
+than a breach of the standard. Chains break where the heat number is missing (651 lines), the certificate is
+missing (458), the grade is unconfirmed on receipt (656), there is no receipt on record (74) or there is no
+delivery note (21). Four of the five breached critical data quality rules are about traceability, among them
+DQ-41: 69 receipts of S355 with no 3.1 certificate.
 
 **Early warning.** Any new receipt without heat number or certificate. Findings from the internal
 traceability audit.

@@ -14,7 +14,7 @@ source file and line.
 | Three-way match | **£4,314,978.39** | purchase-to-pay value at risk (GBP) |
 | Job cost reconciliation | **£1,735,365.44** | gross unexplained job cost gap (GBP) |
 | Stock accuracy | **£15,297.69** | stock value error (GBP) |
-| Material traceability | **1,102.627 t** | tonnes despatched without full traceability |
+| Material traceability | **786.153 t** | tonnes despatched with an EN 1090 compliance exposure |
 
 ## 1. Three-way match
 
@@ -190,20 +190,36 @@ Top offending lines by value (11 of the 11 lines that disagree; the list stops a
 ## 4. Material traceability
 
 Chain: mill certificate and heat number, goods receipt, material issue, works order, delivery note.
-Corvus records no material issues, so which receipt supplied which works order is reconstructed by allocating confirmed-grade receipts first-in first-out, in kg, to BOM lines. That the link has to be inferred at all is a finding. Rows: `recon.trace_lines`, one per BOM line on a started works order; `recon.trace_allocations`, receipt to BOM line; `recon.trace_jobs` and `recon.trace_customers`.
+Corvus records no material issues, so which receipt supplied which works order is reconstructed by allocating confirmed-grade receipts first-in first-out, in kg, to BOM lines. That the link has to be inferred at all is a finding. Rows: `recon.trace_lines`, one per BOM line on a started works order; `recon.trace_allocations`, receipt to BOM line; `recon.trace_receipts`, one per goods receipt; `recon.trace_jobs` and `recon.trace_customers`.
+
+What EN 1090-2 (clause 5.2) requires depends on the execution class the designer specified for the structure, which Corvus records on every works order. On EXC3 and EXC4 work, steel must be traceable from receipt to hand over, so any incomplete chain on steel already despatched is a compliance exposure. On EXC2 work full traceability is not required, but S355 needs a 3.1 inspection document at every class: S355 despatched on an EXC2 job with no certified receipt covering it is a compliance exposure too. Any other incomplete chain on EXC2 work is a quality and good-practice gap, reported separately.
 
 | Figure | Value | How it is calculated | Rows behind it |
 | --- | ---: | --- | --- |
-| Material traceability coverage | **68.73%** | Share of BOM kilograms on started works orders traced to a receipt with heat number and certificate | `SELECT * FROM recon.trace_lines WHERE true` |
-| Jobs despatched with an incomplete chain | **148** | EN 1090 factory production control exposure: steel already on site without full traceability | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
-| Customers with exposed jobs | **38** | Distinct customers of exposed jobs | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
-| Despatched steel without full traceability | **1,102.627 t** | BOM kilograms on despatched works orders whose material chain is broken | `SELECT * FROM recon.trace_lines WHERE exposed` |
-| Sales value of exposed jobs | **£14,465,876.29** | Invoiced sales on jobs with an EN 1090 exposure | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
+| Material traceability coverage, all work | **68.73%** | Share of BOM kilograms on started works orders traced to a receipt with heat number and certificate | `SELECT * FROM recon.trace_lines WHERE true` |
+| Material traceability coverage on EXC3 work | **66.44%** | The same share on EXC3 jobs, where EN 1090-2 requires full traceability | `SELECT * FROM recon.trace_lines WHERE traceability_required` |
+| Material traceability coverage on EXC2 work | **69.88%** | The same share on EXC2 jobs, where full traceability is good practice | `SELECT * FROM recon.trace_lines WHERE NOT traceability_required` |
+| Jobs with an EN 1090 compliance exposure | **145** | EXC3 jobs despatched with an incomplete chain, and EXC2 jobs despatched with S355 whose 3.1 inspection document cannot be shown | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
+| Customers with an EN 1090 compliance exposure | **38** | Distinct customers of jobs with a compliance exposure | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
+| Despatched steel with an EN 1090 compliance exposure | **786.153 t** | BOM kilograms already on site where EN 1090-2 clause 5.2 is not met | `SELECT * FROM recon.trace_lines WHERE compliance_exposure` |
+| EXC3 steel despatched with an incomplete chain | **384.003 t** | Part of the compliance exposure: full traceability is required | `SELECT * FROM recon.trace_lines WHERE exposure = 'EN 1090: EXC3 chain incomplete'` |
+| EXC2 S355 steel despatched with no 3.1 document shown | **402.150 t** | Part of the compliance exposure: S355 needs a 3.1 inspection document at every class, and no certified receipt covers this steel | `SELECT * FROM recon.trace_lines WHERE exposure = 'EN 1090: S355 with no 3.1 document shown'` |
+| Sales value of jobs with a compliance exposure | **£14,350,729.90** | Invoiced sales on jobs with an EN 1090 compliance exposure | `SELECT * FROM recon.trace_jobs WHERE en1090_exposure` |
+| EXC2 jobs despatched with an incomplete chain | **92** | A quality and good-practice gap, not an EN 1090 requirement on EXC2 work | `SELECT * FROM recon.trace_jobs WHERE practice_gap` |
+| EXC2 steel despatched with an incomplete chain | **316.474 t** | A quality and good-practice gap, not an EN 1090 requirement on EXC2 work | `SELECT * FROM recon.trace_lines WHERE practice_gap` |
+| S355 receipts without a 3.1 inspection document | **69** | Receipts of confirmed S355 steel with no mill certificate; required at every execution class | `SELECT * FROM recon.trace_receipts WHERE s355 AND NOT document_31` |
 | Break at receipt: heat number missing | **651** | BOM lines whose chain first fails at: receipt: heat number missing | `SELECT * FROM recon.trace_lines WHERE break_at = 'receipt: heat number missing'` |
 | Break at receipt: mill certificate missing | **458** | BOM lines whose chain first fails at: receipt: mill certificate missing | `SELECT * FROM recon.trace_lines WHERE break_at = 'receipt: mill certificate missing'` |
 | Break at issue: receipt grade unconfirmed | **656** | BOM lines whose chain first fails at: issue: receipt grade unconfirmed | `SELECT * FROM recon.trace_lines WHERE break_at = 'issue: receipt grade unconfirmed'` |
 | Break at issue: no receipt on record | **74** | BOM lines whose chain first fails at: issue: no receipt on record | `SELECT * FROM recon.trace_lines WHERE break_at = 'issue: no receipt on record'` |
 | Break at despatch: no delivery note | **21** | BOM lines whose chain first fails at: despatch: no delivery note | `SELECT * FROM recon.trace_lines WHERE break_at = 'despatch: no delivery note'` |
+
+Jobs by execution class:
+
+| Execution class | Jobs | With a compliance exposure | With a good-practice gap |
+| --- | --- | --- | --- |
+| EXC2 | 97 | 92 | 92 |
+| EXC3 | 53 | 53 | 0 |
 
 Where chains break:
 
@@ -216,67 +232,84 @@ Where chains break:
 | receipt: heat number missing | 651 | 530,674.0 | 560 |
 | receipt: mill certificate missing | 458 | 281,636.4 | 400 |
 
+Despatched steel by what it means and where its chain breaks:
+
+| Meaning | Break point | BOM lines | kg |
+| --- | --- | --- | --- |
+| EN 1090: EXC3 chain incomplete | issue: no receipt on record | 18 | 19,558.0 |
+| EN 1090: EXC3 chain incomplete | issue: receipt grade unconfirmed | 201 | 104,963.3 |
+| EN 1090: EXC3 chain incomplete | receipt: heat number missing | 248 | 172,952.8 |
+| EN 1090: EXC3 chain incomplete | receipt: mill certificate missing | 143 | 86,529.3 |
+| EN 1090: S355 with no 3.1 document shown | issue: no receipt on record | 40 | 39,063.6 |
+| EN 1090: S355 with no 3.1 document shown | issue: receipt grade unconfirmed | 225 | 138,813.6 |
+| EN 1090: S355 with no 3.1 document shown | receipt: heat number missing | 82 | 69,898.4 |
+| EN 1090: S355 with no 3.1 document shown | receipt: mill certificate missing | 195 | 154,374.0 |
+| good practice: EXC2 chain incomplete | issue: no receipt on record | 7 | 1,414.1 |
+| good practice: EXC2 chain incomplete | issue: receipt grade unconfirmed | 126 | 73,630.9 |
+| good practice: EXC2 chain incomplete | receipt: heat number missing | 230 | 222,151.9 |
+| good practice: EXC2 chain incomplete | receipt: mill certificate missing | 62 | 19,276.8 |
+
 A single receipt without a heat number or certificate taints every works order it supplied. Because one delivery of steel feeds many jobs, a minority of untraceable receipts reaches almost every job.
 
-EN 1090 exposure by customer:
+EN 1090 compliance exposure by customer:
 
-| Customer | Jobs | BOM lines | Untraceable kg | Sales value |
+| Customer | Jobs | BOM lines | Exposed kg | Sales value |
 | --- | --- | --- | --- | --- |
-| Lowther Construction Ltd | 11 | 135 | 138,872.4 | £1,321,872 |
-| Thornbury Estates Ltd | 5 | 58 | 66,975.7 | £459,759 |
-| Harborough Industrial Ltd | 4 | 58 | 59,805.1 | £543,460 |
-| Caledonian Rail Engineering Ltd | 4 | 62 | 58,708.1 | £856,012 |
-| Oakridge Developments | 4 | 46 | 47,590.1 | £306,019 |
-| Stanmore Build Ltd | 5 | 58 | 43,809.5 | £534,504 |
-| Bramhall Group plc | 3 | 47 | 42,936.6 | £485,858 |
-| Denton Steel Erectors | 6 | 53 | 42,144.7 | £656,047 |
-| Brackley Logistics Parks | 5 | 65 | 39,029.8 | £543,715 |
+| Lowther Construction Ltd | 10 | 77 | 60,185.2 | £1,282,189 |
+| Caledonian Rail Engineering Ltd | 4 | 55 | 53,621.8 | £856,012 |
+| Harborough Industrial Ltd | 4 | 30 | 47,160.6 | £543,460 |
 | Beacon Mast Services Ltd | 9 | 106 | 38,566.9 | £553,176 |
-| Lindsey Energy Services | 6 | 59 | 38,257.2 | £571,977 |
 | Westgate Rail Ltd | 2 | 26 | 34,949.6 | £561,293 |
-| Calder Engineering Ltd | 5 | 60 | 34,691.2 | £536,031 |
-| Ridley Structures | 4 | 31 | 33,604.3 | £494,274 |
+| Stanmore Build Ltd | 5 | 37 | 33,570.8 | £534,504 |
 | Severn Rail Projects Ltd | 3 | 46 | 33,114.3 | £393,471 |
-| Meridian Construction plc | 3 | 35 | 30,432.8 | £575,227 |
+| Denton Steel Erectors | 6 | 32 | 32,407.3 | £656,047 |
 | Ashcroft Build Ltd | 2 | 45 | 28,510.4 | £313,760 |
-| Fairfield Architectural Ltd | 4 | 41 | 27,105.1 | £386,786 |
-| Wharfe Valley Homes | 7 | 50 | 24,803.4 | £564,725 |
-| Whitmore Warehousing plc | 3 | 40 | 24,645.5 | £260,026 |
-| Highland Mast & Tower Ltd | 7 | 61 | 24,304.0 | £307,906 |
-| Ellesmere Interiors Ltd | 6 | 48 | 22,391.1 | £350,958 |
-| Kestrel Main Contractors Ltd | 1 | 19 | 20,221.4 | £147,047 |
-| Eastway Civils Ltd | 3 | 29 | 18,387.2 | £423,022 |
-| Northern Route Partners | 3 | 28 | 16,742.6 | £325,565 |
-| Kingsmead Retail Developments | 3 | 18 | 14,170.7 | £251,551 |
+| Meridian Construction plc | 3 | 31 | 27,861.2 | £575,227 |
+| Brackley Logistics Parks | 5 | 42 | 27,605.1 | £543,715 |
+| Ridley Structures | 4 | 27 | 27,350.2 | £494,274 |
+| Thornbury Estates Ltd | 5 | 29 | 25,265.3 | £459,759 |
+| Fairfield Architectural Ltd | 4 | 35 | 24,502.1 | £386,786 |
+| Oakridge Developments | 4 | 27 | 24,260.0 | £306,019 |
+| Bramhall Group plc | 3 | 31 | 23,308.9 | £485,858 |
+| Highland Mast & Tower Ltd | 7 | 57 | 22,240.6 | £307,906 |
+| Whitmore Warehousing plc | 3 | 30 | 21,230.1 | £260,026 |
+| Wharfe Valley Homes | 7 | 32 | 21,056.0 | £564,725 |
+| Lindsey Energy Services | 6 | 28 | 20,785.1 | £571,977 |
+| Calder Engineering Ltd | 5 | 35 | 19,952.8 | £536,031 |
+| Eastway Civils Ltd | 3 | 23 | 15,687.1 | £423,022 |
+| Ellesmere Interiors Ltd | 6 | 32 | 14,759.4 | £350,958 |
 | Aerial Sites UK Ltd | 4 | 53 | 13,788.6 | £212,261 |
-| Fenwick Communications plc | 2 | 29 | 13,768.0 | £124,554 |
-| Skyreach Networks Ltd | 5 | 45 | 13,146.5 | £172,973 |
+| Fenwick Communications plc | 2 | 26 | 12,861.9 | £124,554 |
+| Skyreach Networks Ltd | 5 | 42 | 11,844.9 | £172,973 |
 | Orbital Wireless Infrastructure | 3 | 23 | 10,934.4 | £158,651 |
-| Northgate Telecom Infrastructure Ltd | 3 | 21 | 9,709.1 | £151,796 |
+| Kestrel Main Contractors Ltd | 1 | 5 | 9,943.6 | £147,047 |
 | Pennine Rail Alliance | 1 | 6 | 9,322.3 | £114,451 |
-| Marlow Facades Ltd | 2 | 18 | 7,318.5 | £149,287 |
-| Greyfriars Property Group | 2 | 12 | 6,528.1 | £109,675 |
-| Holbeck Developments Ltd | 3 | 17 | 4,734.1 | £171,121 |
-| Pendle Networks Ltd | 3 | 12 | 3,774.1 | £142,398 |
-| Harland & Cole Construction | 1 | 5 | 2,717.5 | £163,894 |
-| Meridian Telecom Build Ltd | 1 | 12 | 2,115.8 | £70,773 |
+| Northgate Telecom Infrastructure Ltd | 3 | 17 | 9,205.4 | £151,796 |
+| Kingsmead Retail Developments | 3 | 12 | 8,961.6 | £251,551 |
+| Northern Route Partners | 3 | 15 | 8,231.5 | £325,565 |
+| Marlow Facades Ltd | 1 | 9 | 4,203.3 | £111,879 |
+| Pendle Networks Ltd | 3 | 9 | 3,542.0 | £142,398 |
+| Holbeck Developments Ltd | 3 | 12 | 3,401.2 | £171,121 |
+| Meridian Telecom Build Ltd | 1 | 6 | 1,169.0 | £70,773 |
+| Harland & Cole Construction | 1 | 3 | 671.6 | £163,894 |
+| Greyfriars Property Group | 1 | 1 | 121.0 | £71,619 |
 
-Top 15 exposed jobs:
+Top 15 jobs with a compliance exposure:
 
-| Job | Customer | Coverage | Exposed lines | Untraceable kg | Tonnes despatched |
-| --- | --- | --- | --- | --- | --- |
-| J-25-0127 | Lowther Construction Ltd | 63.4% | 13 | 34,132.7 | 93.4 |
-| J-26-0103 | Harborough Industrial Ltd | 30.5% | 19 | 33,123.6 | 47.6 |
-| J-25-0164 | Westgate Rail Ltd | 56.4% | 21 | 31,622.0 | 72.9 |
-| J-25-0157 | Bramhall Group plc | 59.2% | 25 | 24,468.1 | 32.0 |
-| J-26-0102 | Ridley Structures | 56.9% | 18 | 23,357.0 | 54.2 |
-| J-26-0113 | Caledonian Rail Engineering Ltd | 64.3% | 20 | 22,637.8 | 61.4 |
-| J-26-0108 | Ashcroft Build Ltd | 52.1% | 28 | 20,772.1 | 46.8 |
-| J-25-0152 | Kestrel Main Contractors Ltd | 56.5% | 19 | 20,221.4 | 45.3 |
-| J-25-0131 | Lowther Construction Ltd | 60.2% | 17 | 20,166.6 | 50.7 |
-| J-25-0147 | Caledonian Rail Engineering Ltd | 63.6% | 13 | 19,899.5 | 52.4 |
-| J-24-0866 | Meridian Construction plc | 59.8% | 15 | 18,834.9 | 44.9 |
-| J-26-0131 | Harborough Industrial Ltd | 56.4% | 17 | 18,730.5 | 38.2 |
-| J-25-0165 | Thornbury Estates Ltd | 58.2% | 14 | 18,051.1 | 45.0 |
-| J-24-0852 | Denton Steel Erectors | 66.0% | 17 | 17,647.2 | 51.9 |
-| J-26-0106 | Oakridge Developments | 57.1% | 6 | 17,613.0 | 41.0 |
+| Job | Class | Customer | Coverage | Exposed lines | Exposed kg | Tonnes despatched |
+| --- | --- | --- | --- | --- | --- | --- |
+| J-25-0164 | EXC3 | Westgate Rail Ltd | 56.4% | 21 | 31,622.0 | 72.9 |
+| J-26-0103 | EXC2 | Harborough Industrial Ltd | 30.5% | 9 | 29,814.3 | 47.6 |
+| J-26-0102 | EXC3 | Ridley Structures | 56.9% | 18 | 23,357.0 | 54.2 |
+| J-26-0113 | EXC3 | Caledonian Rail Engineering Ltd | 64.3% | 20 | 22,637.8 | 61.4 |
+| J-26-0108 | EXC3 | Ashcroft Build Ltd | 52.1% | 28 | 20,772.1 | 46.8 |
+| J-25-0147 | EXC3 | Caledonian Rail Engineering Ltd | 63.6% | 13 | 19,899.5 | 52.4 |
+| J-24-0866 | EXC3 | Meridian Construction plc | 59.8% | 15 | 18,834.9 | 44.9 |
+| J-25-0158 | EXC3 | Severn Rail Projects Ltd | 61.9% | 10 | 16,956.8 | 43.5 |
+| J-26-0138 | EXC3 | Lowther Construction Ltd | 56.9% | 9 | 15,701.2 | 34.6 |
+| J-24-0852 | EXC2 | Denton Steel Erectors | 66.0% | 8 | 14,684.2 | 51.9 |
+| J-25-0173 | EXC3 | Bramhall Group plc | 57.6% | 13 | 14,443.7 | 34.0 |
+| J-25-0167 | EXC2 | Whitmore Warehousing plc | 62.7% | 17 | 13,370.8 | 38.9 |
+| J-26-0107 | EXC2 | Brackley Logistics Parks | 66.8% | 15 | 13,089.1 | 48.0 |
+| J-26-0131 | EXC2 | Harborough Industrial Ltd | 56.4% | 9 | 12,934.9 | 38.2 |
+| J-25-0122 | EXC2 | Stanmore Build Ltd | 79.4% | 9 | 12,236.3 | 65.1 |

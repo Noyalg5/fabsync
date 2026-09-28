@@ -1,9 +1,10 @@
--- KPI-06 Material traceability coverage. Built on recon.trace_lines.
+-- KPI-06 Material traceability coverage on EXC3 work, with EXC2 alongside. Built on recon.trace_lines.
 
 CREATE VIEW marts.traceability_coverage AS
-SELECT CAST(date_trunc('month', t.planned_start) AS DATE) AS month, w.site_code, count(*) AS bom_lines,
-       round(sum(t.kg) / 1000, 1) AS tonnes,
+SELECT CAST(date_trunc('month', t.planned_start) AS DATE) AS month, w.site_code, t.execution_class,
+       count(*) AS bom_lines, round(sum(t.kg) / 1000, 1) AS tonnes,
        round(100 * sum(t.kg) FILTER (WHERE t.material_chain_complete) / sum(t.kg), 1) AS coverage_pct,
-       count(*) FILTER (WHERE t.exposed) AS despatched_untraced_lines
+       count(*) FILTER (WHERE t.exposed) AS despatched_untraced_lines,
+       count(*) FILTER (WHERE t.compliance_exposure) AS compliance_exposed_lines
 FROM recon.trace_lines t JOIN core.works_orders w ON w.wo_no = t.wo_no
-GROUP BY ALL ORDER BY 1, 2;
+GROUP BY ALL ORDER BY 1, 2, 3;

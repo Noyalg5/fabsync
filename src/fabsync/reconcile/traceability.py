@@ -24,9 +24,24 @@ chain breaks:
    despatch window
 
 Coverage is the share of BOM kilograms whose chain is complete through the
-material links (1 to 3). A job that has already despatched steel from a works
-order whose material chain is incomplete is an EN 1090 factory production
-control exposure, reported by job and by customer.
+material links (1 to 3).
+
+What EN 1090-2 (clause 5.2) requires depends on the execution class the designer
+specified for the structure, which Corvus records on every works order:
+
+* EXC3 and EXC4: constituent products traceable at all stages from receipt to
+  hand over. Steel despatched on an EXC3 job with an incomplete chain is an
+  EN 1090 compliance exposure.
+* EXC2: full traceability is not required, but S355 needs a 3.1 inspection
+  document (in this scenario every mill certificate is EN 10204 type 3.1) and
+  mixed grades must be marked. S355 steel despatched on an EXC2 job whose
+  supplying receipts do not all carry a certificate, or that no certified receipt
+  covers, is an EN 1090 compliance exposure. Any other incomplete chain on an
+  EXC2 job is a quality and good-practice gap, reported separately.
+
+A job whose works orders carry no single class is treated as EXC3. The 3.1 check
+on S355 applies at every class: `recon.trace_receipts` lists every receipt with
+its confirmed grade and whether it carries a certificate.
 """
 
 from __future__ import annotations
@@ -40,6 +55,7 @@ from fabsync.reconcile.common import EngineResult, Headline
 RECEIPTS_SQL = """
 SELECT g.grn_no, g.po_no, g.received_date, g.heat_number, g.mill_cert_ref, trim(g.material_code) AS material_code,
        x.status AS grade_status, x.canonical_code, x.section_type,
+       CASE WHEN x.status = 'auto' THEN m.grade END AS grade,
        regexp_replace(coalesce(x.proposed_code, split_part(x.candidates, ', ', 1), x.canonical_code), '-.*$', '')
            AS designation_key,
        CAST(CASE g.uom WHEN 'KG' THEN g.qty_received WHEN 'M' THEN g.qty_received * m.mass
@@ -53,12 +69,14 @@ ORDER BY g.received_date, g.grn_no
 """
 
 DEMAND_SQL = """
-SELECT b.wo_no, b.line_no, w.job_no, w.status, w.planned_start, w.planned_finish, w.actual_finish,
-       x.canonical_code, regexp_replace(x.canonical_code, '-.*$', '') AS designation_key,
+SELECT b.wo_no, b.line_no, w.job_no, coalesce(j.execution_class, 'unknown') AS execution_class, w.status,
+       w.planned_start, w.planned_finish, w.actual_finish, x.canonical_code, m.grade,
+       regexp_replace(x.canonical_code, '-.*$', '') AS designation_key,
        CAST(CASE b.uom WHEN 'KG' THEN b.qty ELSE b.qty * m.mass END AS DOUBLE) AS kg,
        b._source_file AS source_file, b._source_row AS source_row
 FROM staging.corvus_mrp_bom_lines b
 JOIN core.works_orders w ON w.wo_no = b.wo_no
+JOIN core.jobs j ON j.job_no = w.job_no
 JOIN core.material_xref x ON x.source_table = 'bom_lines' AND x.source_code = b.material_code
      AND x.source_description IS NOT DISTINCT FROM b.description AND x.source_grade IS NOT DISTINCT FROM b.grade
      AND x.source_section_type IS NOT DISTINCT FROM b.section_type
@@ -87,6 +105,9 @@ LEFT JOIN (SELECT job_no, sum(tonnage) AS tonnage_despatched, count(*) AS delive
 
 LINKS = ["receipt: heat number missing", "receipt: mill certificate missing", "issue: receipt grade unconfirmed",
          "issue: no receipt on record"]
+EXC3_INCOMPLETE = "EN 1090: EXC3 chain incomplete"
+S355_NO_31 = "EN 1090: S355 with no 3.1 document shown"
+EXC2_GAP = "good practice: EXC2 chain incomplete"
 
 
 def allocate(receipts: pd.DataFrame, demand: pd.DataFrame, cfg: dict) -> pd.DataFrame:
@@ -154,22 +175,48 @@ def material_traceability(con, cfg: dict) -> EngineResult:
     lines["break_at"], lines["reason"] = outcome[0], outcome[1]
     lines["material_chain_complete"] = ~lines.break_at.isin(LINKS)
     lines["exposed"] = lines.despatched & ~lines.material_chain_complete
+    # EN 1090-2 5.2 asks for full traceability only on EXC3 and EXC4 work; a job with no single class counts.
+    lines["traceability_required"] = lines.execution_class != "EXC2"
+    lines["s355"] = lines.grade.fillna("").str.startswith("S355")
+    # A 3.1 document can be shown for S355 only if certified receipts cover the whole line.
+    lines["document_31_shown"] = pd.Series(
+        [bool(c and short <= 0.5) if s355 else None for s355, c, short in
+         zip(lines.s355, lines.cert_ok, lines.kg_short, strict=True)], index=lines.index, dtype="boolean")
+
+    def exposure(r) -> str | None:
+        if not r.despatched:
+            return None
+        if r.traceability_required and not r.material_chain_complete:
+            return EXC3_INCOMPLETE
+        if r.s355 and not r.document_31_shown:
+            return S355_NO_31
+        if not r.material_chain_complete:
+            return EXC2_GAP
+        return None
+    lines["exposure"] = lines.apply(exposure, axis=1)
+    lines["compliance_exposure"] = lines.exposure.isin([EXC3_INCOMPLETE, S355_NO_31])
+    lines["practice_gap"] = lines.exposure == EXC2_GAP
     lines.insert(0, "line_id", lines.wo_no.astype(str) + "/" + lines.line_no.astype(str))
     for c in ("planned_start", "planned_finish", "actual_finish", "despatch_date"):
         lines[c] = pd.to_datetime(lines[c]).dt.date
 
     customers = con.execute(CUSTOMER_SQL).df()
     jobs = lines.groupby("job_no").agg(
-        bom_lines=("line_id", "size"), kg=("kg", "sum"),
+        execution_class=("execution_class", "first"), bom_lines=("line_id", "size"), kg=("kg", "sum"),
         kg_traced=("kg", lambda s: s[lines.loc[s.index, "material_chain_complete"]].sum()),
         broken_lines=("material_chain_complete", lambda s: int((~s).sum())),
-        despatched_lines=("despatched", "sum"), exposed_lines=("exposed", "sum"),
-        exposed_kg=("kg", lambda s: s[lines.loc[s.index, "exposed"]].sum())).reset_index()
+        despatched_lines=("despatched", "sum"), exposed_lines=("compliance_exposure", "sum"),
+        exposed_kg=("kg", lambda s: s[lines.loc[s.index, "compliance_exposure"]].sum()),
+        gap_lines=("practice_gap", "sum"),
+        gap_kg=("kg", lambda s: s[lines.loc[s.index, "practice_gap"]].sum())).reset_index()
     jobs = jobs.merge(customers, on="job_no", how="left")
     jobs["coverage"] = (jobs.kg_traced / jobs.kg).round(4)
     jobs["despatched"] = jobs.despatched_lines > 0
+    # Exposed lines and kilograms are EN 1090 compliance exposures; the gap is good practice on EXC2 work.
     jobs["en1090_exposure"] = jobs.exposed_lines > 0
+    jobs["practice_gap"] = jobs.gap_lines > 0
     jobs["exposed_kg"] = jobs.exposed_kg.round(1)
+    jobs["gap_kg"] = jobs.gap_kg.round(1)
     jobs = jobs.sort_values(["en1090_exposure", "exposed_kg", "job_no"], ascending=[False, False, True])
 
     exposed_jobs = jobs[jobs.en1090_exposure]
@@ -182,33 +229,71 @@ def material_traceability(con, cfg: dict) -> EngineResult:
 
     breaks = (lines.groupby("break_at").agg(lines=("line_id", "size"), kg=("kg", "sum"),
                                             exposed_lines=("exposed", "sum")).reset_index())
-    coverage = float(lines.loc[lines.material_chain_complete, "kg"].sum() / lines.kg.sum())
-    exposure_kg = float(lines.loc[lines.exposed, "kg"].sum())
 
-    t, tj = "recon.trace_lines", "recon.trace_jobs"
+    def share(mask) -> float:
+        return float(lines.loc[mask & lines.material_chain_complete, "kg"].sum() / lines.loc[mask, "kg"].sum())
+
+    def tonnes(mask) -> float:
+        return round(float(lines.loc[mask, "kg"].sum()) / 1000, 3)
+
+    exposure_kg = float(lines.loc[lines.compliance_exposure, "kg"].sum())
+    receipts_out = receipts[["grn_no", "po_no", "received_date", "material_code", "grade_status", "grade",
+                             "heat_number", "mill_cert_ref", "source_file", "source_row"]].copy()
+    receipts_out["s355"] = receipts_out.grade.fillna("").str.startswith("S355")
+    receipts_out["document_31"] = receipts_out.mill_cert_ref.notna()
+    receipts_out["received_date"] = pd.to_datetime(receipts_out.received_date).dt.date
+
+    t, tj, tr = "recon.trace_lines", "recon.trace_jobs", "recon.trace_receipts"
+    chain_share = "round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 2)"
     heads = [
-        Headline("traceability", "coverage", "Material traceability coverage", round(100 * coverage, 2), "percent",
-                 t, "true", "round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 2)",
+        Headline("traceability", "coverage", "Material traceability coverage, all work",
+                 round(100 * share(lines.kg == lines.kg), 2), "percent", t, "true", chain_share,
                  "Share of BOM kilograms on started works orders traced to a receipt with heat number and certificate"),
-        Headline("traceability", "exposed_jobs", "Jobs despatched with an incomplete chain",
+        Headline("traceability", "coverage_exc3", "Material traceability coverage on EXC3 work",
+                 round(100 * share(lines.traceability_required), 2), "percent", t, "traceability_required",
+                 chain_share, "The same share on EXC3 jobs, where EN 1090-2 requires full traceability"),
+        Headline("traceability", "coverage_exc2", "Material traceability coverage on EXC2 work",
+                 round(100 * share(~lines.traceability_required), 2), "percent", t, "NOT traceability_required",
+                 chain_share, "The same share on EXC2 jobs, where full traceability is good practice"),
+        Headline("traceability", "exposed_jobs", "Jobs with an EN 1090 compliance exposure",
                  int(jobs.en1090_exposure.sum()), "count", tj, "en1090_exposure", "count(*)",
-                 "EN 1090 factory production control exposure: steel already on site without full traceability"),
-        Headline("traceability", "exposed_customers", "Customers with exposed jobs",
+                 "EXC3 jobs despatched with an incomplete chain, and EXC2 jobs despatched with S355 whose 3.1 "
+                 "inspection document cannot be shown"),
+        Headline("traceability", "exposed_customers", "Customers with an EN 1090 compliance exposure",
                  int(by_customer.customer_name.nunique()), "count", tj, "en1090_exposure",
                  "count(DISTINCT coalesce(customer_name, '(no finance customer)'))",
-                 "Distinct customers of exposed jobs"),
-        Headline("traceability", "exposed_kg", "Despatched steel without full traceability",
-                 round(exposure_kg / 1000, 3), "tonnes", t, "exposed", "round(sum(kg) / 1000, 3)",
-                 "BOM kilograms on despatched works orders whose material chain is broken"),
-        Headline("traceability", "exposed_sales", "Sales value of exposed jobs",
+                 "Distinct customers of jobs with a compliance exposure"),
+        Headline("traceability", "exposed_kg", "Despatched steel with an EN 1090 compliance exposure",
+                 round(exposure_kg / 1000, 3), "tonnes", t, "compliance_exposure", "round(sum(kg) / 1000, 3)",
+                 "BOM kilograms already on site where EN 1090-2 clause 5.2 is not met"),
+        Headline("traceability", "exposed_kg_exc3", "EXC3 steel despatched with an incomplete chain",
+                 tonnes(lines.exposure == EXC3_INCOMPLETE), "tonnes", t, f"exposure = '{EXC3_INCOMPLETE}'",
+                 "round(sum(kg) / 1000, 3)", "Part of the compliance exposure: full traceability is required"),
+        Headline("traceability", "exposed_kg_s355", "EXC2 S355 steel despatched with no 3.1 document shown",
+                 tonnes(lines.exposure == S355_NO_31), "tonnes", t, f"exposure = '{S355_NO_31}'",
+                 "round(sum(kg) / 1000, 3)",
+                 "Part of the compliance exposure: S355 needs a 3.1 inspection document at every class, and no "
+                 "certified receipt covers this steel"),
+        Headline("traceability", "exposed_sales", "Sales value of jobs with a compliance exposure",
                  round(float(exposed_jobs.sales_value.fillna(0).sum()), 2), "GBP", tj, "en1090_exposure",
-                 "round(sum(coalesce(sales_value, 0)), 2)", "Invoiced sales on jobs with an EN 1090 exposure"),
+                 "round(sum(coalesce(sales_value, 0)), 2)",
+                 "Invoiced sales on jobs with an EN 1090 compliance exposure"),
+        Headline("traceability", "gap_jobs", "EXC2 jobs despatched with an incomplete chain",
+                 int(jobs.practice_gap.sum()), "count", tj, "practice_gap", "count(*)",
+                 "A quality and good-practice gap, not an EN 1090 requirement on EXC2 work"),
+        Headline("traceability", "gap_kg", "EXC2 steel despatched with an incomplete chain",
+                 tonnes(lines.practice_gap), "tonnes", t, "practice_gap", "round(sum(kg) / 1000, 3)",
+                 "A quality and good-practice gap, not an EN 1090 requirement on EXC2 work"),
+        Headline("traceability", "s355_receipts_no_31", "S355 receipts without a 3.1 inspection document",
+                 int((receipts_out.s355 & ~receipts_out.document_31).sum()), "count", tr,
+                 "s355 AND NOT document_31", "count(*)",
+                 "Receipts of confirmed S355 steel with no mill certificate; required at every execution class"),
     ]
     for link in LINKS + ["despatch: no delivery note"]:
         heads.append(Headline("traceability", "break_" + link.split(": ")[1].replace(" ", "_"), f"Break at {link}",
                               int((lines.break_at == link).sum()), "count", t, f"break_at = '{link}'", "count(*)",
                               f"BOM lines whose chain first fails at: {link}"))
     return EngineResult("traceability", lines, breaks, exposure_kg / 1000,
-                        "tonnes despatched without full traceability", heads,
+                        "tonnes despatched with an EN 1090 compliance exposure", heads,
                         {"trace_lines": lines, "trace_allocations": alloc, "trace_jobs": jobs,
-                         "trace_customers": by_customer, "trace_breaks": breaks})
+                         "trace_customers": by_customer, "trace_breaks": breaks, "trace_receipts": receipts_out})

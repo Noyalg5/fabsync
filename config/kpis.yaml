@@ -112,20 +112,24 @@ kpis:
       marts.three_way_value_at_risk: Lines, value at risk and items over 90 days old by match category.
 
   - id: KPI-06
-    name: Material traceability coverage
-    definition: The share of steel used on our works orders that we can trace back to the mill certificate and cast it came from.
-    formula: kg of BOM material on started works orders whose supplying receipts all carry a heat number and mill certificate and state the grade / total kg x 100
-    sources: corvus_mrp.goods_received (heat_number, mill_cert_ref, material_code, received_date); corvus_mrp.bom_lines; corvus_mrp.works_orders; shop_floor.delivery_notes
+    name: Material traceability coverage on EXC3 work
+    definition: The share of steel used on our EXC3 works orders that we can trace back to the mill certificate and cast it came from.
+    formula: kg of BOM material on started works orders of EXC3 jobs whose supplying receipts all carry a heat number and mill certificate and state the grade / total kg on those works orders x 100; EXC2 work alongside, the same way
+    sources: corvus_mrp.goods_received (heat_number, mill_cert_ref, material_code, received_date); corvus_mrp.bom_lines; corvus_mrp.works_orders (execution_class); shop_floor.delivery_notes
     owner: Quality Manager
     refresh: Daily
-    caveat: Corvus records no material issues, so which delivery went into which works order is inferred by allocating deliveries first-in first-out. A real audit would need the cutting lists. A chain that shows as complete here has the right references on file; that does not prove the certificates were checked or the steel physically marked. The target is 100%, because EN 1090 allows no gaps.
+    caveat: Corvus records no material issues, so which delivery went into which works order is inferred by allocating deliveries first-in first-out. A real audit would need the cutting lists. A chain that shows as complete here has the right references on file; that does not prove the certificates were checked or the steel physically marked. The target is 100% on EXC3 work, where EN 1090-2 requires traceability from receipt to hand over. On EXC2 work it is good practice, not a requirement, so that figure has no target; S355 still needs a 3.1 inspection document at every class.
     unit: percent
     target: 100
     direction: higher
-    headline: SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 1) FROM recon.trace_lines
-    rows: SELECT * FROM recon.trace_lines ORDER BY material_chain_complete, kg DESC
+    headline: SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 1) FROM recon.trace_lines WHERE traceability_required
+    rows: SELECT * FROM recon.trace_lines WHERE traceability_required ORDER BY material_chain_complete, kg DESC
+    secondary:
+      label: Coverage on EXC2 work
+      unit: percent
+      sql: SELECT round(100 * sum(CASE WHEN material_chain_complete THEN kg END) / sum(kg), 1) FROM recon.trace_lines WHERE NOT traceability_required
     views:
-      marts.traceability_coverage: Traceability coverage by month and site, with despatched lines that are not traced.
+      marts.traceability_coverage: Traceability coverage by month, site and execution class, with despatched lines that are not traced.
 
   - id: KPI-07
     name: WIP value and ageing

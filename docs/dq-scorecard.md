@@ -2,11 +2,11 @@
 
 **All data assessed here is synthetic.** It represents no real company, supplier, customer or job.
 
-Produced by `make quality` from the 40 rules declared in `config/dq_rules.yaml`, evaluated as at 2026-08-31. Every run is kept in `governance.dq_results` so the index can be trended (`governance.v_dq_trend`). Failing records are in `governance.v_dq_exception_queue`.
+Produced by `make quality` from the 41 rules declared in `config/dq_rules.yaml`, evaluated as at 2026-08-31. Every run is kept in `governance.dq_results` so the index can be trended (`governance.v_dq_trend`). Failing records are in `governance.v_dq_exception_queue`.
 
-## Headline data quality index: 92.2 / 100
+## Headline data quality index: 92.1 / 100
 
-7 of 40 rules meet their threshold. 4 critical rules are breached. 13,103 failing records are in the exception queue.
+7 of 41 rules meet their threshold. 5 critical rules are breached. 13,172 failing records are in the exception queue.
 
 ### How the index is calculated
 
@@ -31,20 +31,20 @@ its score.
 | Owner | Index | Rules met | Critical breaches | Records checked | Records failing |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Purchasing Manager | **87.7** | 2 of 9 | 1 | 21,731 | 1,625 |
-| Quality Manager | **89.8** | 1 of 5 | 2 | 2,688 | 309 |
+| Quality Manager | **89.8** | 1 of 6 | 3 | 3,350 | 378 |
 | Finance Manager | **92.2** | 0 of 7 | 1 | 5,158 | 219 |
 | Production Controller | **96.4** | 4 of 19 |  | 139,678 | 10,950 |
 
 - **Finance Manager:** 219 open exceptions. Most severe first: DQ-14 Invoice within tolerance of order value (53); DQ-13 Goods receipts invoiced within 30 days (66); DQ-11 Sales invoices raised against a Corvus job (32); DQ-16 Labour cost reconciles to booked hours (30).
 - **Production Controller:** 10,950 open exceptions. Most severe first: DQ-23 Time bookings against a real works order (46); DQ-29 Promised date on every delivery note (30); DQ-20 Shop-floor entries readable (24); DQ-28 Operation named on every booking (379).
 - **Purchasing Manager:** 1,625 open exceptions. Most severe first: DQ-03 Steel grade stated on every order and receipt (246); DQ-12 Overdue purchase orders have a goods receipt (82); DQ-07 One Corvus supplier code per supplier (10); DQ-09 Every Corvus supplier linked to a finance account (3).
-- **Quality Manager:** 309 open exceptions. Most severe first: DQ-02 Mill certificate on every goods receipt (106); DQ-01 Heat number on every goods receipt (103); DQ-34 NCRs closed within 60 days (55); DQ-39 Cost entered on every NCR (45).
+- **Quality Manager:** 378 open exceptions. Most severe first: DQ-02 Mill certificate on every goods receipt (106); DQ-01 Heat number on every goods receipt (103); DQ-41 3.1 inspection document on every S355 receipt (69); DQ-34 NCRs closed within 60 days (55).
 
 ## By source system
 
 | System of record | Index | Rules met | Critical breaches | Records checked | Records failing |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Corvus MRP | **91.1** | 6 of 19 | 3 | 54,879 | 1,958 |
+| Corvus MRP | **91.0** | 6 of 20 | 4 | 55,541 | 2,027 |
 | Finance system | **92.2** | 0 of 7 | 1 | 5,158 | 219 |
 | Shop-floor spreadsheets | **94.6** | 1 of 14 |  | 109,218 | 10,926 |
 
@@ -55,7 +55,7 @@ its score.
 | timeliness | **82.8** | 0 of 3 |  | 1,106 | 166 |
 | uniqueness | **82.8** | 0 of 4 |  | 26,746 | 181 |
 | consistency | **90.9** | 2 of 10 |  | 42,626 | 11,260 |
-| completeness | **92.7** | 1 of 12 | 3 | 34,452 | 1,387 |
+| completeness | **92.3** | 1 of 13 | 4 | 35,114 | 1,456 |
 | accuracy | **93.7** | 0 of 2 | 1 | 1,024 | 64 |
 | validity | **99.9** | 4 of 9 |  | 63,301 | 45 |
 
@@ -64,8 +64,9 @@ its score.
 | Rule | Severity | Owner | Pass rate | Threshold | Failing | Consequence |
 | --- | --- | --- | ---: | ---: | ---: | --- |
 | DQ-03 Steel grade stated on every order and receipt | critical | Purchasing Manager | 88.2% | 100.0% | 246 | Where a section is stocked in more than one grade, an order without a grade may bring in S275 steel for an S355 design. That is a structural safety risk, and stock cannot be allocated to jobs with confidence. |
-| DQ-02 Mill certificate on every goods receipt | critical | Quality Manager | 89.3% | 100.0% | 106 | Without the certificate there is no evidence of chemistry or strength. The steel cannot be used on EXC2 or higher work, and an auditor will raise a major finding. |
-| DQ-01 Heat number on every goods receipt | critical | Quality Manager | 89.6% | 100.0% | 103 | Steel cannot be traced to its mill certificate. Under EN 1090-2 factory production control that is a nonconformity, and the finished steelwork cannot be UKCA or CE marked until it is resolved. |
+| DQ-02 Mill certificate on every goods receipt | critical | Quality Manager | 89.3% | 100.0% | 106 | Without the certificate there is no evidence of chemistry or strength. EN 1090-2 requires a 3.1 inspection document for S355 at every execution class (DQ-41), and full traceability to the certificate on EXC3 and EXC4 work. |
+| DQ-41 3.1 inspection document on every S355 receipt | critical | Quality Manager | 89.6% | 100.0% | 69 | EN 1090-2 requires a 3.1 inspection document for S355 at every execution class, EXC2 included. S355 from this delivery cannot be used on any certified structure, and any already despatched is an EN 1090 compliance exposure. |
+| DQ-01 Heat number on every goods receipt | critical | Quality Manager | 89.6% | 100.0% | 103 | Steel cannot be traced to its mill certificate. EN 1090-2 requires that trace, from receipt to hand over, on EXC3 and EXC4 work, so steel from this delivery cannot go into an EXC3 structure until it is resolved; on EXC2 work the gap is a failure of good practice rather than of the standard. |
 | DQ-14 Invoice within tolerance of order value | critical | Finance Manager | 94.2% | 100.0% | 53 | Overcharges are paid without challenge. Across a year of steel buying that is a direct margin loss. |
 | DQ-07 One Corvus supplier code per supplier | high | Purchasing Manager | 58.3% | 100.0% | 10 | Spend with one stockholder is split across codes. Volume rebates are missed, supplier performance looks better or worse than it is, and a stopped supplier can still be ordered from under its other code. |
 | DQ-34 NCRs closed within 60 days | high | Quality Manager | 74.8% | 90.0% | 55 | Open NCRs mean suspect steelwork may already be on site. They are also an EN 1090 audit finding and a sign that root causes are not being fixed. |
@@ -108,7 +109,7 @@ Each defect seeded into the synthetic sources (data/raw/DEFECTS.md) and the rule
 | 3 | DQ-10, DQ-11 | 52 |
 | 4 | DQ-05 | 14 |
 | 5 | DQ-12, DQ-13, DQ-14 | 201 |
-| 6 | DQ-01, DQ-02 | 209 |
+| 6 | DQ-01, DQ-02, DQ-41 | 278 |
 | 7 | DQ-16 | 30 |
 | 8 | DQ-17 | 11 |
 | 9 | DQ-19, DQ-20, DQ-21, DQ-22, DQ-27, DQ-28, DQ-29, DQ-30, DQ-39, DQ-40 | 10,823 |
@@ -122,6 +123,7 @@ Each defect seeded into the synthetic sources (data/raw/DEFECTS.md) and the rule
 | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | :---: |
 | DQ-01 Heat number on every goods receipt | completeness | critical | Corvus MRP | Quality Manager | 989 | 103 | 89.6% | 100.0% | **no** |
 | DQ-02 Mill certificate on every goods receipt | completeness | critical | Corvus MRP | Quality Manager | 989 | 106 | 89.3% | 100.0% | **no** |
+| DQ-41 3.1 inspection document on every S355 receipt | completeness | critical | Corvus MRP | Quality Manager | 662 | 69 | 89.6% | 100.0% | **no** |
 | DQ-03 Steel grade stated on every order and receipt | completeness | critical | Corvus MRP | Purchasing Manager | 2,093 | 246 | 88.2% | 100.0% | **no** |
 | DQ-04 Materials recorded under their canonical code | consistency | medium | Corvus MRP | Purchasing Manager | 8,132 | 1,265 | 84.4% | 98.0% | **no** |
 | DQ-05 One unit of measure per material | consistency | medium | Corvus MRP | Purchasing Manager | 47 | 14 | 70.2% | 100.0% | **no** |

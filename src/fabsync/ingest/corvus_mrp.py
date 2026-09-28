@@ -42,6 +42,8 @@ CONTRACT = SourceContract(
                 Column("status", TEXT, required=True,
                        domain=("PLANNED", "OPEN", "RELEASED", "COMPLETE", "CLOSED", "CANCELLED")),
                 Column("site", TEXT, required=True, domain=("WKF", "TEE")),
+                Column("execution_class", TEXT, required=True, domain=("EXC1", "EXC2", "EXC3", "EXC4"),
+                       description="Execution class to EN 1090-2, specified by the designer for the structure"),
             ),
         ),
         TableContract(

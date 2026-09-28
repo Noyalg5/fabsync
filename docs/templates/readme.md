@@ -105,6 +105,10 @@ errors, structural noise, orphan works orders, housekeeping lapses, steel charge
 events dated after the extract. The test suite reads that register as the expected set and fails if any
 planted defect goes undetected or anything unplanted is flagged.
 
+Every job also carries the execution class its designer would specify under EN 1090, drawn by kind of project:
+{{exc3_jobs}} jobs are EXC3 and {{exc2_jobs}} EXC2. The mix is recorded at the top of `DEFECTS.md` as a property
+of the scenario, not a defect.
+
 ## Deliberately out of scope
 
 - **Live systems.** The extracts are files. Nothing connects to, or writes back to, a real MRP or finance
@@ -133,6 +137,12 @@ planted defect goes undetected or anything unplanted is flagged.
   These, the ageing buckets and the KPI targets are settings in `config/`, not code.
 - **Scoring.** The data quality index weights each rule by severity (critical {{w_critical}}, high {{w_high}},
   medium {{w_medium}}, low {{w_low}}). Risks are scored as likelihood times impact, each scored from 1 to 5.
+- **Execution class and EN 1090.** Each job's class is read from its works orders; a job with no single class
+  would be treated as EXC3. On EXC3 work any incomplete chain on steel already despatched is an EN 1090
+  compliance exposure. On EXC2 work only S355 with no 3.1 certificate shown is; other incomplete chains are a
+  good-practice gap, reported separately. S355 counts as certified only where receipts with a certificate cover
+  all of it, so steel whose receipts omit the grade, or that no receipt covers, counts as exposed: the cautious
+  reading, since the records cannot show its certificate.
 - **Work in progress.** Material counts in full from the start of a works order, so early-stage WIP is
   overstated, and works orders left open after despatch count as WIP until closed.
 - **Benefits.** The benefits case rests on {{assumptions}} stated assumptions ({{first_assumption}} to

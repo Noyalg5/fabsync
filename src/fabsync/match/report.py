@@ -117,7 +117,8 @@ def render_report(results: dict, quality: pd.DataFrame, ctx: MatchContext) -> st
             "one grade the grade is proposed for confirmation; where it is held in several, a person must read the",
             f"mill certificate. Those review items cover {doc_rows:,} purchase order and goods received lines, "
             "each needing its own",
-            "certificate check. This is an EN 1090 traceability exposure, not a formatting problem.", "",
+            "certificate check. On EXC3 work that is an EN 1090 traceability exposure, and S355 needs its 3.1",
+            "certificate at every execution class: it is not a formatting problem.", "",
             *table(method_breakdown(x, "row_count"), ["method", "status", "values", "rows"],
                    ["Method", "Status", "Values", "Rows"]),
             "", f"Survivorship: {SURVIVORSHIP}.", "",
